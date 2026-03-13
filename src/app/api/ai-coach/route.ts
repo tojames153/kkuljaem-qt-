@@ -95,9 +95,14 @@ async function callOpenAI(apiKey: string, text: string): Promise<string | null> 
 export async function GET() {
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const openaiKey = process.env.OPENAI_API_KEY;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   return NextResponse.json({
-    anthropic: anthropicKey ? `set (${anthropicKey.substring(0, 10)}...)` : 'not set',
-    openai: openaiKey ? `set (${openaiKey.substring(0, 10)}...)` : 'not set',
+    anthropic: anthropicKey ? `set (${anthropicKey.substring(0, 12)}...)` : 'not set',
+    openai: openaiKey ? `set (${openaiKey.substring(0, 12)}...)` : 'not set',
+    supabase_url: supabaseUrl || 'not set',
+    env_keys: Object.keys(process.env).filter(k =>
+      k.includes('ANTHROPIC') || k.includes('OPENAI') || k.includes('SUPABASE')
+    ),
   });
 }
 
