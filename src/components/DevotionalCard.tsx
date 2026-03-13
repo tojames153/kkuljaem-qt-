@@ -1,6 +1,65 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Devotional } from '@/types';
+
+interface BibleVerse {
+  verse: number;
+  text: string;
+}
+
+function BibleText({ passage }: { passage: string }) {
+  const [verses, setVerses] = useState<BibleVerse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    async function fetchBible() {
+      try {
+        const res = await fetch(`/api/bible?passage=${encodeURIComponent(passage)}`);
+        const data = await res.json();
+        if (data.verses && data.verses.length > 0) {
+          setVerses(data.verses);
+        } else {
+          setError(data.error || '본문을 불러올 수 없습니다.');
+        }
+      } catch {
+        setError('성경 본문을 불러오는 중 오류가 발생했습니다.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchBible();
+  }, [passage]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-4">
+        <div className="w-5 h-5 border-2 border-amber-300 border-t-transparent rounded-full animate-spin" />
+        <span className="ml-2 text-sm text-stone-400">본문 불러오는 중...</span>
+      </div>
+    );
+  }
+
+  if (error || verses.length === 0) {
+    return (
+      <p className="text-sm text-stone-400 italic py-2">
+        {error || '성경 본문을 표시할 수 없습니다.'}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {verses.map((v) => (
+        <p key={v.verse} className="text-stone-700 text-[15px] leading-relaxed">
+          <span className="text-amber-500 font-bold text-xs mr-1.5">{v.verse}</span>
+          {v.text}
+        </p>
+      ))}
+    </div>
+  );
+}
 
 interface Props {
   devotional: Devotional;
@@ -8,6 +67,8 @@ interface Props {
 }
 
 export default function DevotionalCard({ devotional, compact = false }: Props) {
+  const [showBible, setShowBible] = useState(true);
+
   if (compact) {
     return (
       <div className="bg-white rounded-2xl p-5 shadow-sm border border-amber-50 animate-fade-in">
@@ -32,6 +93,42 @@ export default function DevotionalCard({ devotional, compact = false }: Props) {
         </span>
         <h2 className="text-2xl font-bold text-brown">{devotional.theme}</h2>
         <p className="text-amber-600 font-medium mt-1">{devotional.passage}</p>
+      </div>
+
+      {/* 성경 본문 */}
+      <div className="bg-amber-50/50 rounded-2xl p-6 border border-amber-100">
+        <button
+          onClick={() => setShowBible(!showBible)}
+          className="w-full flex items-center justify-between mb-3"
+        >
+          <div className="flex items-center gap-2">
+            <span className="text-lg">📖</span>
+            <h3 className="font-semibold text-brown">성경 본문</h3>
+            <span className="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">개역한글</span>
+          </div>
+          <svg
+            className={`w-5 h-5 text-stone-400 transition-transform ${showBible ? 'rotate-180' : ''}`}
+            fill="none" stroke="currentColor" viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m19.5 8.25-7.5 7.5-7.5-7.5" />
+          </svg>
+        </button>
+        {showBible && (
+          <>
+            <BibleText passage={devotional.passage} />
+            <a
+              href={`https://www.bible.com/ko/search/bible?q=${encodeURIComponent(devotional.passage)}&version_id=89`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 mt-4 text-xs text-amber-600 hover:text-amber-700 font-medium"
+            >
+              📖 새번역으로 보기 (Bible.com)
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+              </svg>
+            </a>
+          </>
+        )}
       </div>
 
       {/* 본문 묵상글 */}
