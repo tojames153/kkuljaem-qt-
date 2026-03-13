@@ -103,20 +103,32 @@ export default function HomePage() {
           </Link>
         )}
 
-        {/* 오늘의 찬양 */}
+        {/* 오늘의 찬양 — YouTube 검색 연결 */}
         {devotional?.ccm && (
-          <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-5 animate-fade-in"
-               style={{ animationDelay: '0.3s' }}>
+          <a
+            href={`https://www.youtube.com/results?search_query=${encodeURIComponent(devotional.ccm + ' 찬양')}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-5 animate-fade-in hover:shadow-md transition-shadow"
+            style={{ animationDelay: '0.3s' }}
+          >
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-honey/20 rounded-xl flex items-center justify-center text-2xl">
-                🎵
+              <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                <svg className="w-7 h-7 text-red-500" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                </svg>
               </div>
-              <div>
+              <div className="flex-1">
                 <p className="text-xs text-stone-400 font-medium">오늘의 찬양</p>
                 <p className="text-brown font-bold">{devotional.ccm}</p>
               </div>
+              <div className="text-stone-300">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                </svg>
+              </div>
             </div>
-          </div>
+          </a>
         )}
 
         {/* 오늘의 암송 */}
