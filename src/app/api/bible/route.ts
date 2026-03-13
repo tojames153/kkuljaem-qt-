@@ -92,11 +92,18 @@ function parsePassage(passage: string) {
   return { bookNum, chapter, startVerse, endVerse };
 }
 
+const VALID_TRANSLATIONS = ['KRV', 'NIV'];
+
 export async function GET(request: NextRequest) {
   const passage = request.nextUrl.searchParams.get('passage');
+  const translation = request.nextUrl.searchParams.get('translation') || 'KRV';
 
   if (!passage) {
     return NextResponse.json({ error: '구절을 입력해주세요.' }, { status: 400 });
+  }
+
+  if (!VALID_TRANSLATIONS.includes(translation)) {
+    return NextResponse.json({ error: '지원하지 않는 번역입니다.' }, { status: 400 });
   }
 
   const parsed = parsePassage(passage);
@@ -106,7 +113,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const res = await fetch(
-      `https://bolls.life/get-text/KRV/${parsed.bookNum}/${parsed.chapter}/`,
+      `https://bolls.life/get-text/${translation}/${parsed.bookNum}/${parsed.chapter}/`,
       { next: { revalidate: 86400 } } // 24시간 캐시
     );
 

@@ -8,15 +8,18 @@ interface BibleVerse {
   text: string;
 }
 
-function BibleText({ passage }: { passage: string }) {
+function BibleText({ passage, translation = 'KRV' }: { passage: string; translation?: string }) {
   const [verses, setVerses] = useState<BibleVerse[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    setLoading(true);
+    setError('');
+    setVerses([]);
     async function fetchBible() {
       try {
-        const res = await fetch(`/api/bible?passage=${encodeURIComponent(passage)}`);
+        const res = await fetch(`/api/bible?passage=${encodeURIComponent(passage)}&translation=${translation}`);
         const data = await res.json();
         if (data.verses && data.verses.length > 0) {
           setVerses(data.verses);
@@ -30,7 +33,7 @@ function BibleText({ passage }: { passage: string }) {
       }
     }
     fetchBible();
-  }, [passage]);
+  }, [passage, translation]);
 
   if (loading) {
     return (
@@ -68,6 +71,7 @@ interface Props {
 
 export default function DevotionalCard({ devotional, compact = false }: Props) {
   const [showBible, setShowBible] = useState(true);
+  const [bibleTranslation, setBibleTranslation] = useState<'KRV' | 'NIV'>('KRV');
 
   if (compact) {
     return (
@@ -99,12 +103,11 @@ export default function DevotionalCard({ devotional, compact = false }: Props) {
       <div className="bg-amber-50/50 rounded-2xl p-6 border border-amber-100">
         <button
           onClick={() => setShowBible(!showBible)}
-          className="w-full flex items-center justify-between mb-3"
+          className="w-full flex items-center justify-between"
         >
           <div className="flex items-center gap-2">
             <span className="text-lg">📖</span>
             <h3 className="font-semibold text-brown">성경 본문</h3>
-            <span className="text-xs text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">개역한글</span>
           </div>
           <svg
             className={`w-5 h-5 text-stone-400 transition-transform ${showBible ? 'rotate-180' : ''}`}
@@ -113,7 +116,26 @@ export default function DevotionalCard({ devotional, compact = false }: Props) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m19.5 8.25-7.5 7.5-7.5-7.5" />
           </svg>
         </button>
-        {showBible && <BibleText passage={devotional.passage} />}
+        {showBible && (
+          <div className="mt-3">
+            <div className="flex gap-2 mb-4">
+              {([['KRV', '개역한글'], ['NIV', 'NIV']] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setBibleTranslation(key)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    bibleTranslation === key
+                      ? 'bg-amber-600 text-white shadow-sm'
+                      : 'bg-white text-stone-500 border border-amber-200'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <BibleText passage={devotional.passage} translation={bibleTranslation} />
+          </div>
+        )}
       </div>
 
       {/* 본문 묵상글 */}
