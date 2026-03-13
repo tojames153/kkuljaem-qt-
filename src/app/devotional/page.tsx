@@ -6,15 +6,40 @@ import AppShell from '@/components/AppShell';
 import DevotionalCard from '@/components/DevotionalCard';
 import { getTodayDevotional } from '@/lib/sample-devotional';
 import { Devotional, AgeGroup } from '@/types';
+import { useAuth } from '@/lib/auth-context';
 
 export default function DevotionalPage() {
   const [devotional, setDevotional] = useState<Devotional | null>(null);
   const [ageGroup, setAgeGroup] = useState<AgeGroup>('youth');
   const [showAgeContent, setShowAgeContent] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     setDevotional(getTodayDevotional());
-  }, []);
+
+    // 사용자 연령대 자동 설정
+    if (user?.age_group && user.age_group !== 'teacher' && user.age_group !== 'admin') {
+      setAgeGroup(user.age_group);
+    }
+
+    // 연속 묵상 streak 업데이트
+    const today = new Date().toDateString();
+    try {
+      const raw = localStorage.getItem('kkuljaem-streak');
+      if (raw) {
+        const { count, lastDate } = JSON.parse(raw);
+        if (lastDate !== today) {
+          const yesterday = new Date(Date.now() - 86400000).toDateString();
+          const newCount = lastDate === yesterday ? count + 1 : 1;
+          localStorage.setItem('kkuljaem-streak', JSON.stringify({ count: newCount, lastDate: today }));
+        }
+      } else {
+        localStorage.setItem('kkuljaem-streak', JSON.stringify({ count: 1, lastDate: today }));
+      }
+    } catch {
+      localStorage.setItem('kkuljaem-streak', JSON.stringify({ count: 1, lastDate: today }));
+    }
+  }, [user]);
 
   if (!devotional) {
     return (

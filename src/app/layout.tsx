@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import Providers from '@/components/Providers';
 
 export const metadata: Metadata = {
   title: '꿀잼QT - 매일 말씀 묵상',
@@ -34,7 +35,7 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
       </head>
       <body className="min-h-screen bg-warm-white">
-        {children}
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

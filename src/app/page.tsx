@@ -5,11 +5,13 @@ import Link from 'next/link';
 import AppShell from '@/components/AppShell';
 import { getTodayDevotional } from '@/lib/sample-devotional';
 import { Devotional } from '@/types';
+import { useAuth } from '@/lib/auth-context';
 
 export default function HomePage() {
   const [devotional, setDevotional] = useState<Devotional | null>(null);
-  const [streak, setStreak] = useState(7);
+  const [streak, setStreak] = useState(0);
   const [greeting, setGreeting] = useState('');
+  const { user } = useAuth();
 
   useEffect(() => {
     setDevotional(getTodayDevotional());
@@ -18,6 +20,25 @@ export default function HomePage() {
     if (hour < 12) setGreeting('좋은 아침이에요!');
     else if (hour < 18) setGreeting('은혜로운 오후에요!');
     else setGreeting('평안한 저녁이에요!');
+
+    // 연속 묵상 streak 계산
+    const streakData = localStorage.getItem('kkuljaem-streak');
+    if (streakData) {
+      try {
+        const { count, lastDate } = JSON.parse(streakData);
+        const today = new Date().toDateString();
+        const yesterday = new Date(Date.now() - 86400000).toDateString();
+        if (lastDate === today) {
+          setStreak(count);
+        } else if (lastDate === yesterday) {
+          setStreak(count); // 오늘 아직 안 했지만 어제까지 연속
+        } else {
+          setStreak(0);
+        }
+      } catch {
+        setStreak(0);
+      }
+    }
   }, []);
 
   const today = new Date();
@@ -31,7 +52,9 @@ export default function HomePage() {
         {/* 인사 & 날짜 */}
         <div className="animate-fade-in">
           <p className="text-stone-400 text-sm">{dateStr} {dayStr}요일</p>
-          <h2 className="text-xl font-bold text-brown mt-1">{greeting} 🌿</h2>
+          <h2 className="text-xl font-bold text-brown mt-1">
+            {user?.name ? `${user.name}님, ` : ''}{greeting} 🌿
+          </h2>
         </div>
 
         {/* 연속 묵상 streak */}

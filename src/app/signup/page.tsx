@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 import { createClient } from '@/lib/supabase-browser';
 import { AgeGroup } from '@/types';
 
@@ -16,6 +17,7 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { signup: demoSignup } = useAuth();
 
   const ageOptions: { value: AgeGroup; label: string; emoji: string; desc: string }[] = [
     { value: 'children', label: '초등학생', emoji: '🌱', desc: '쉽고 재미있는 묵상' },
@@ -29,8 +31,21 @@ export default function SignupPage() {
     setLoading(true);
 
     const supabase = createClient();
+
     if (!supabase) {
-      // 데모 모드
+      // 데모 모드: localStorage 기반 회원가입
+      const result = demoSignup({
+        name,
+        email,
+        password,
+        age_group: ageGroup,
+        church_name: churchName,
+      });
+      if (!result.success) {
+        setError(result.error || '회원가입에 실패했습니다.');
+        setLoading(false);
+        return;
+      }
       router.push('/');
       return;
     }

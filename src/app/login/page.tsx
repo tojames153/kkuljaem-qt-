@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
 import { createClient } from '@/lib/supabase-browser';
 
 export default function LoginPage() {
@@ -11,6 +12,13 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { login, demoLogin, user } = useAuth();
+
+  // 이미 로그인된 경우 홈으로
+  if (user) {
+    router.push('/');
+    return null;
+  }
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,8 +26,15 @@ export default function LoginPage() {
     setLoading(true);
 
     const supabase = createClient();
+
     if (!supabase) {
-      // 데모 모드
+      // 데모 모드: localStorage 기반 로그인
+      const result = login(email, password);
+      if (!result.success) {
+        setError(result.error || '로그인에 실패했습니다.');
+        setLoading(false);
+        return;
+      }
       router.push('/');
       return;
     }
@@ -51,7 +66,7 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     const supabase = createClient();
     if (!supabase) {
-      router.push('/');
+      setError('Google 로그인은 Supabase 연결 후 사용 가능합니다. 체험하기를 이용해주세요.');
       return;
     }
     await supabase.auth.signInWithOAuth({
@@ -63,6 +78,7 @@ export default function LoginPage() {
   };
 
   const handleDemoLogin = () => {
+    demoLogin();
     router.push('/');
   };
 
