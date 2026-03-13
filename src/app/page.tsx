@@ -69,7 +69,7 @@ export default function HomePage() {
             <div className="streak-glow text-5xl">🍯</div>
           </div>
           <div className="flex gap-1 mt-3">
-            {['일', '월', '화', '수', '목', '금', '토'].map((d, i) => {
+            {['주일', '월', '화', '수', '목', '금', '토'].map((d, i) => {
               const todayIdx = new Date().getDay(); // 일=0 ~ 토=6
               const isChecked = i <= todayIdx && i > todayIdx - streak;
               return (
