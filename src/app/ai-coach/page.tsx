@@ -24,21 +24,34 @@ function AiCoachContent() {
     if (!reflectionText.trim()) return;
     setLoading(true);
 
-    // 데모용 AI 응답 (실제 배포 시 OpenAI API 연결)
-    await new Promise((r) => setTimeout(r, 1500));
+    try {
+      const res = await fetch('/api/ai-coach', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reflection_text: reflectionText }),
+      });
 
-    const demoResponse = generateDemoResponse(reflectionText);
-    setResponse(demoResponse);
+      const data = await res.json();
 
-    const newLog = {
-      prompt: reflectionText,
-      response: demoResponse,
-      date: new Date().toISOString(),
-    };
-    const updated = [newLog, ...history];
-    setHistory(updated);
-    localStorage.setItem('kkuljaem-ai-logs', JSON.stringify(updated));
-    setLoading(false);
+      if (!res.ok) {
+        setResponse(data.error || 'AI 코치 응답에 실패했습니다.');
+      } else {
+        setResponse(data.response);
+      }
+
+      const newLog = {
+        prompt: reflectionText,
+        response: data.response || data.error,
+        date: new Date().toISOString(),
+      };
+      const updated = [newLog, ...history];
+      setHistory(updated);
+      localStorage.setItem('kkuljaem-ai-logs', JSON.stringify(updated));
+    } catch {
+      setResponse('네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -129,24 +142,6 @@ function AiCoachContent() {
       )}
     </div>
   );
-}
-
-function generateDemoResponse(text: string): string {
-  return `💛 공감 한 문장
-당신의 묵상 속에서 하나님을 향한 진실한 마음이 느껴져요. 그 솔직함이 참 아름답습니다.
-
-📖 영적 통찰
-${text.length > 20 ? '당신이 나눈 이야기 속에서' : '묵상 가운데'} 하나님의 은혜가 역사하고 계심을 봅니다. 성경은 "항상 기뻐하라 쉬지 말고 기도하라 범사에 감사하라"(살전 5:16-18)고 말씀하십니다. 오늘의 묵상이 당신의 삶 속에서 하나님의 임재를 더 깊이 경험하는 시간이 되길 바랍니다.
-
-때로는 말씀이 머리로는 이해되지만 마음으로 와닿지 않을 때가 있어요. 그럴 때일수록 조용히 하나님 앞에 머무는 것이 중요합니다.
-
-💭 추가 묵상 질문
-1. 오늘 말씀 중 가장 마음에 남는 한 구절은 무엇인가요?
-2. 이 말씀을 통해 하나님이 나에게 하시는 말씀은 무엇일까요?
-3. 내일 하루를 이 말씀으로 살아간다면, 무엇이 달라질까요?
-
-🙏 기도문
-사랑의 하나님, 오늘도 말씀 앞에 나아온 이 귀한 자녀를 축복해 주세요. 묵상 가운데 깨달은 것들이 삶 속에서 열매 맺게 하시고, 날마다 주님과 더 깊은 교제를 누리게 하소서. 예수님의 이름으로 기도합니다. 아멘.`;
 }
 
 export default function AiCoachPage() {
