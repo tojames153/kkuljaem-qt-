@@ -155,12 +155,6 @@ export default function DevotionalPage() {
         >
           ✍️ 묵상 기록하기
         </Link>
-        <Link
-          href="/ai-coach"
-          className="block bg-white text-center py-4 rounded-2xl font-bold text-sm text-brown border-2 border-amber-200 hover:border-amber-300 transition-colors"
-        >
-          🤖 AI 코치에게 질문하기
-        </Link>
       </div>
     </AppShell>
   );

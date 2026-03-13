@@ -9,7 +9,6 @@ const pageTitles: Record<string, string> = {
   '/': '꿀잼QT',
   '/devotional': '오늘의 묵상',
   '/reflection': '묵상 기록',
-  '/ai-coach': 'AI 묵상 코치',
   '/prayer': '기도 노트',
   '/memorize': '말씀 암송',
   '/community': '공동체 묵상',

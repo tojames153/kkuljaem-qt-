@@ -64,12 +64,3 @@ export interface CommunityReaction {
   reaction_type: ReactionType;
   created_at: string;
 }
-
-export interface AiCoachLog {
-  id: string;
-  user_id: string;
-  reflection_id: string | null;
-  prompt: string;
-  response: string;
-  created_at: string;
-}

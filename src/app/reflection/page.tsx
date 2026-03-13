@@ -148,15 +148,6 @@ export default function ReflectionPage() {
               {saved ? '✅ 저장되었습니다!' : '💾 묵상 기록 저장'}
             </button>
 
-            {/* AI 코치 버튼 */}
-            {text.trim() && (
-              <a
-                href={`/ai-coach?text=${encodeURIComponent(text)}`}
-                className="block bg-white text-center py-3.5 rounded-2xl font-semibold text-sm text-brown border-2 border-amber-200 hover:border-amber-300 transition-colors"
-              >
-                🤖 AI 코치에게 이 묵상 보내기
-              </a>
-            )}
           </div>
         ) : (
           /* 기록 목록 */
