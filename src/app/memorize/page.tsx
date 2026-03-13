@@ -26,7 +26,9 @@ export default function MemorizePage() {
   const [records, setRecords] = useState<MemorizeRecord[]>([]);
   const [todayCompleted, setTodayCompleted] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const [hintLevel, setHintLevel] = useState(1); // 1=쉬움, 2=보통, 3=어려움
+  const [hintLevel, setHintLevel] = useState(1);
+  const [fullVerseText, setFullVerseText] = useState('');
+  const [verseLoading, setVerseLoading] = useState(false);
 
   useEffect(() => {
     const dev = getTodayDevotional();
@@ -44,6 +46,25 @@ export default function MemorizePage() {
       }
     }
   }, []);
+
+  // 성경 API에서 암송 구절 전문 가져오기
+  useEffect(() => {
+    if (!devotional?.memory_verse) return;
+    const { ref } = parseMemoryVerse(devotional.memory_verse);
+    if (!ref) return;
+
+    setVerseLoading(true);
+    fetch(`/api/bible?passage=${encodeURIComponent(ref)}&translation=KRV`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.verses && data.verses.length > 0) {
+          const text = data.verses.map((v: { verse: number; text: string }) => v.text).join(' ');
+          setFullVerseText(text);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setVerseLoading(false));
+  }, [devotional]);
 
   const handleComplete = () => {
     if (!devotional?.memory_verse) return;
@@ -95,6 +116,8 @@ export default function MemorizePage() {
   };
 
   const parsed = devotional?.memory_verse ? parseMemoryVerse(devotional.memory_verse) : null;
+  // API 전문이 있으면 사용, 없으면 데이터의 축약본 사용
+  const verseText = fullVerseText || parsed?.text || '';
 
   return (
     <AppShell>
@@ -142,12 +165,19 @@ export default function MemorizePage() {
                   <p className="text-white/70 text-sm text-center mt-2">이 구절을 기억하시나요?</p>
                   <span className="text-xs opacity-60 mt-4">탭하여 본문 확인</span>
                 </div>
-                {/* 뒷면 — 암송 본문 */}
-                <div className="flip-card-back absolute inset-0 bg-white rounded-3xl p-8 flex flex-col items-center justify-center shadow-lg border-2 border-amber-200">
+                {/* 뒷면 — 암송 본문 (성경 전문) */}
+                <div className="flip-card-back absolute inset-0 bg-white rounded-3xl p-6 flex flex-col items-center justify-center shadow-lg border-2 border-amber-200">
                   <span className="text-xs text-amber-600 font-semibold mb-3">{parsed.ref}</span>
-                  <p className="text-lg font-bold text-brown text-center leading-relaxed">
-                    {parsed.text}
-                  </p>
+                  {verseLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-amber-300 border-t-transparent rounded-full animate-spin" />
+                      <span className="text-sm text-stone-400">본문 불러오는 중...</span>
+                    </div>
+                  ) : (
+                    <p className="text-base font-bold text-brown text-center leading-relaxed">
+                      {verseText}
+                    </p>
+                  )}
                   <span className="text-xs text-stone-400 mt-4">탭하여 다시 도전</span>
                 </div>
               </div>
@@ -190,7 +220,7 @@ export default function MemorizePage() {
                 </div>
                 <p className="text-stone-500 text-xs mb-3 text-center">빈칸을 채워보세요</p>
                 <p className="text-brown font-semibold text-base leading-relaxed text-center">
-                  {getHintText(parsed.text)}
+                  {getHintText(verseText)}
                 </p>
                 <p className="text-xs text-amber-600 text-center mt-3">— {parsed.ref}</p>
               </div>
