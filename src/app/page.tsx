@@ -158,14 +158,22 @@ export default function HomePage() {
         )}
 
         {/* 빠른 메뉴 */}
-        <div className="grid grid-cols-2 gap-3 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+        <div className="grid grid-cols-4 gap-3 animate-fade-in" style={{ animationDelay: '0.5s' }}>
           <Link href="/reflection" className="bg-white rounded-2xl p-4 text-center shadow-sm border border-amber-50 hover:shadow-md transition-shadow">
             <span className="text-2xl block mb-1">✍️</span>
-            <span className="text-xs font-medium text-stone-600">묵상 기록</span>
+            <span className="text-[11px] font-medium text-stone-600">묵상 기록</span>
           </Link>
           <Link href="/prayer" className="bg-white rounded-2xl p-4 text-center shadow-sm border border-amber-50 hover:shadow-md transition-shadow">
             <span className="text-2xl block mb-1">🙏</span>
-            <span className="text-xs font-medium text-stone-600">기도 노트</span>
+            <span className="text-[11px] font-medium text-stone-600">기도 노트</span>
+          </Link>
+          <Link href="/memorize" className="bg-white rounded-2xl p-4 text-center shadow-sm border border-amber-50 hover:shadow-md transition-shadow">
+            <span className="text-2xl block mb-1">📖</span>
+            <span className="text-[11px] font-medium text-stone-600">말씀 암송</span>
+          </Link>
+          <Link href="/community" className="bg-white rounded-2xl p-4 text-center shadow-sm border border-amber-50 hover:shadow-md transition-shadow">
+            <span className="text-2xl block mb-1">🌿</span>
+            <span className="text-[11px] font-medium text-stone-600">공동체</span>
           </Link>
         </div>
       </div>

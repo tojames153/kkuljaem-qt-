@@ -1,7 +1,7 @@
 {
   "name": "꿀잼QT - 매일 말씀 묵상",
   "short_name": "꿀잼QT",
-  "description": "5분 질문형 말씀 묵상과 AI 영성 코칭",
+  "description": "매일 5분, 달콤한 말씀 묵상",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FFFDF7",

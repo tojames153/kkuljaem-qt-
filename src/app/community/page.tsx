@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import AppShell from '@/components/AppShell';
 import { Reflection, ReactionType } from '@/types';
+import { useAuth } from '@/lib/auth-context';
 
 interface CommunityPost extends Reflection {
   reactions: Record<ReactionType, number>;
@@ -12,65 +13,36 @@ interface CommunityPost extends Reflection {
 export default function CommunityPage() {
   const [posts, setPosts] = useState<CommunityPost[]>([]);
   const [filter, setFilter] = useState<'all' | 'group' | 'church'>('all');
+  const { user } = useAuth();
 
   useEffect(() => {
-    // 데모 공동체 데이터
-    const demoPosts: CommunityPost[] = [
-      {
-        id: '1',
-        user_id: 'user-1',
-        devotional_id: 'dev-1',
-        reflection_text:
-          '오늘 말씀을 통해 하나님이 어둠 속에서도 함께하신다는 것을 다시 한번 느꼈습니다. 요즘 힘든 일이 있었는데, 이 말씀이 큰 위로가 되었어요.',
-        visibility: 'church',
-        created_at: new Date(Date.now() - 3600000).toISOString(),
-        updated_at: new Date().toISOString(),
-        user: { name: '은혜' },
-        reactions: { pray: 5, empathy: 3, grace: 2 },
-      },
-      {
-        id: '2',
-        user_id: 'user-2',
-        devotional_id: 'dev-1',
-        reflection_text:
-          '빛을 기다린다는 것은 소극적인 것이 아니라, 하나님을 신뢰하는 적극적인 행위라는 것을 깨달았습니다. 기다림 속에서도 하나님은 일하고 계세요!',
-        visibility: 'church',
-        created_at: new Date(Date.now() - 7200000).toISOString(),
-        updated_at: new Date().toISOString(),
-        user: { name: '빛나리' },
-        reactions: { pray: 8, empathy: 6, grace: 4 },
-      },
-      {
-        id: '3',
-        user_id: 'user-3',
-        devotional_id: 'dev-1',
-        reflection_text:
-          '이사야 9:2 말씀처럼, 우리 학교에서도 빛이 되고 싶어요. 친구들에게 좋은 영향을 줄 수 있는 사람이 되기를 기도합니다.',
-        visibility: 'group',
-        created_at: new Date(Date.now() - 10800000).toISOString(),
-        updated_at: new Date().toISOString(),
-        user: { name: '소망이' },
-        reactions: { pray: 12, empathy: 4, grace: 7 },
-      },
-      {
-        id: '4',
-        user_id: 'user-4',
-        devotional_id: 'dev-1',
-        reflection_text:
-          '매일 묵상하면서 하나님과의 관계가 더 깊어지는 것 같아요. 꿀잼QT 덕분에 꾸준히 할 수 있어서 감사합니다.',
-        visibility: 'church',
-        created_at: new Date(Date.now() - 14400000).toISOString(),
-        updated_at: new Date().toISOString(),
-        user: { name: '하늘' },
-        reactions: { pray: 3, empathy: 9, grace: 5 },
-      },
-    ];
-    setPosts(demoPosts);
-  }, []);
+    // localStorage에서 공개된 묵상 기록 불러오기
+    const loadPosts = () => {
+      const stored = localStorage.getItem('kkuljaem-reflections');
+      const savedReactions = localStorage.getItem('kkuljaem-community-reactions');
+      const reactionsMap: Record<string, { reactions: Record<ReactionType, number>; myReaction?: ReactionType }> =
+        savedReactions ? JSON.parse(savedReactions) : {};
+
+      if (stored) {
+        const reflections: Reflection[] = JSON.parse(stored);
+        // 공개 설정된 묵상만 표시 (group 또는 church)
+        const publicPosts: CommunityPost[] = reflections
+          .filter((r) => r.visibility !== 'private')
+          .map((r) => ({
+            ...r,
+            user: { name: user?.name || '나' },
+            reactions: reactionsMap[r.id]?.reactions || { pray: 0, empathy: 0, grace: 0 },
+            myReaction: reactionsMap[r.id]?.myReaction,
+          }));
+        setPosts(publicPosts);
+      }
+    };
+    loadPosts();
+  }, [user]);
 
   const handleReaction = (postId: string, type: ReactionType) => {
-    setPosts((prev) =>
-      prev.map((post) => {
+    setPosts((prev) => {
+      const updated = prev.map((post) => {
         if (post.id !== postId) return post;
         const wasSelected = post.myReaction === type;
         return {
@@ -84,8 +56,17 @@ export default function CommunityPage() {
               : {}),
           },
         };
-      })
-    );
+      });
+
+      // 반응 상태 저장
+      const reactionsMap: Record<string, { reactions: Record<ReactionType, number>; myReaction?: ReactionType }> = {};
+      updated.forEach((p) => {
+        reactionsMap[p.id] = { reactions: p.reactions, myReaction: p.myReaction };
+      });
+      localStorage.setItem('kkuljaem-community-reactions', JSON.stringify(reactionsMap));
+
+      return updated;
+    });
   };
 
   const reactionConfig: Record<ReactionType, { emoji: string; label: string }> = {
@@ -134,50 +115,58 @@ export default function CommunityPage() {
 
         {/* 게시물 목록 */}
         <div className="space-y-4">
-          {filteredPosts.map((post, i) => (
-            <div
-              key={post.id}
-              className="bg-white rounded-2xl p-5 shadow-sm border border-amber-50 animate-fade-in"
-              style={{ animationDelay: `${0.1 * (i + 1)}s` }}
-            >
-              {/* 사용자 정보 */}
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 bg-honey/20 rounded-full flex items-center justify-center text-sm font-bold text-amber-700">
-                  {post.user?.name.charAt(0)}
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-semibold text-brown">{post.user?.name}</p>
-                  <p className="text-xs text-stone-400">{timeAgo(post.created_at)}</p>
-                </div>
-                <span className="text-xs bg-cream px-2 py-0.5 rounded-full text-stone-500">
-                  {post.visibility === 'church' ? '⛪ 교회' : '👥 소그룹'}
-                </span>
-              </div>
-
-              {/* 묵상 내용 */}
-              <p className="text-[15px] text-stone-700 leading-relaxed mb-4">
-                {post.reflection_text}
-              </p>
-
-              {/* 반응 버튼 */}
-              <div className="flex gap-2 pt-3 border-t border-amber-50">
-                {(Object.keys(reactionConfig) as ReactionType[]).map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => handleReaction(post.id, type)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
-                      post.myReaction === type
-                        ? 'bg-honey/20 text-amber-700 border border-honey/30'
-                        : 'bg-stone-50 text-stone-500 hover:bg-amber-50'
-                    }`}
-                  >
-                    <span>{reactionConfig[type].emoji}</span>
-                    <span>{post.reactions[type]}</span>
-                  </button>
-                ))}
-              </div>
+          {filteredPosts.length === 0 ? (
+            <div className="text-center py-16 animate-fade-in">
+              <span className="text-5xl block mb-4">🌿</span>
+              <p className="text-stone-400 font-medium">아직 공유된 묵상이 없어요</p>
+              <p className="text-stone-300 text-sm mt-1">묵상 기록에서 &apos;소그룹&apos; 또는 &apos;교회 전체&apos;로 공개해보세요!</p>
             </div>
-          ))}
+          ) : (
+            filteredPosts.map((post, i) => (
+              <div
+                key={post.id}
+                className="bg-white rounded-2xl p-5 shadow-sm border border-amber-50 animate-fade-in"
+                style={{ animationDelay: `${0.1 * (i + 1)}s` }}
+              >
+                {/* 사용자 정보 */}
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-9 h-9 bg-honey/20 rounded-full flex items-center justify-center text-sm font-bold text-amber-700">
+                    {post.user?.name.charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-brown">{post.user?.name}</p>
+                    <p className="text-xs text-stone-400">{timeAgo(post.created_at)}</p>
+                  </div>
+                  <span className="text-xs bg-cream px-2 py-0.5 rounded-full text-stone-500">
+                    {post.visibility === 'church' ? '⛪ 교회' : '👥 소그룹'}
+                  </span>
+                </div>
+
+                {/* 묵상 내용 */}
+                <p className="text-[15px] text-stone-700 leading-relaxed mb-4">
+                  {post.reflection_text}
+                </p>
+
+                {/* 반응 버튼 */}
+                <div className="flex gap-2 pt-3 border-t border-amber-50">
+                  {(Object.keys(reactionConfig) as ReactionType[]).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => handleReaction(post.id, type)}
+                      className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-medium transition-all ${
+                        post.myReaction === type
+                          ? 'bg-honey/20 text-amber-700 border border-honey/30'
+                          : 'bg-stone-50 text-stone-500 hover:bg-amber-50'
+                      }`}
+                    >
+                      <span>{reactionConfig[type].emoji}</span>
+                      <span>{post.reactions[type]}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </AppShell>

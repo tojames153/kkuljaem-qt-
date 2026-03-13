@@ -15,8 +15,8 @@ export interface DemoUser {
 interface AuthContextType {
   user: DemoUser | null;
   loading: boolean;
-  login: (email: string, password: string) => { success: boolean; error?: string };
-  signup: (data: { name: string; email: string; password: string; age_group: AgeGroup; church_name: string }) => { success: boolean; error?: string };
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signup: (data: { name: string; email: string; password: string; age_group: AgeGroup; church_name: string }) => Promise<{ success: boolean; error?: string }>;
   demoLogin: () => void;
   logout: () => void;
 }
@@ -27,6 +27,15 @@ const STORAGE_KEYS = {
   SESSION: 'kkuljaem-session',
   USERS: 'kkuljaem-users',
 };
+
+// 비밀번호 해시 (SHA-256)
+async function hashPassword(password: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(password + 'kkuljaem-salt-2024');
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 
 function getStoredUsers(): Record<string, { password: string; user: DemoUser }> {
   if (typeof window === 'undefined') return {};
@@ -70,14 +79,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(false);
   }, []);
 
-  const login = useCallback((email: string, password: string) => {
+  const login = useCallback(async (email: string, password: string) => {
     const users = getStoredUsers();
     const entry = users[email.toLowerCase()];
 
     if (!entry) {
       return { success: false, error: '등록되지 않은 이메일입니다. 회원가입을 먼저 해주세요.' };
     }
-    if (entry.password !== password) {
+
+    const hashed = await hashPassword(password);
+    if (entry.password !== hashed) {
       return { success: false, error: '비밀번호가 올바르지 않습니다.' };
     }
 
@@ -86,7 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { success: true };
   }, []);
 
-  const signup = useCallback((data: { name: string; email: string; password: string; age_group: AgeGroup; church_name: string }) => {
+  const signup = useCallback(async (data: { name: string; email: string; password: string; age_group: AgeGroup; church_name: string }) => {
     const users = getStoredUsers();
     const emailKey = data.email.toLowerCase();
 
@@ -103,7 +114,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       created_at: new Date().toISOString(),
     };
 
-    users[emailKey] = { password: data.password, user: newUser };
+    const hashed = await hashPassword(data.password);
+    users[emailKey] = { password: hashed, user: newUser };
     saveStoredUsers(users);
     setUser(newUser);
     saveSession(newUser);

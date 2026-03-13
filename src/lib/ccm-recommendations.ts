@@ -27,7 +27,7 @@ const seasonCcm: Record<string, CcmSet> = {
   '사순절': {
     children: '십자가 사랑',
     youth: '주님의 십자가를 묵상하면',
-    young_adult: '옛 루gged 십자가',
+    young_adult: '옛 험한 십자가',
   },
   '고난주간': {
     children: '예수님이 좋아요',
@@ -173,7 +173,7 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
     ccm: {
       children: '십자가 사랑',
       youth: '주님의 십자가를 묵상하면',
-      young_adult: '옛 루gged 십자가',
+      young_adult: '옛 험한 십자가',
     },
   },
   {

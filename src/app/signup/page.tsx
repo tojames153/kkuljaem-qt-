@@ -50,11 +50,11 @@ export default function SignupPage() {
     return true;
   };
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     setError('');
     setLoading(true);
 
-    const result = signup({
+    const result = await signup({
       name: name.trim(),
       email: email.trim(),
       password,

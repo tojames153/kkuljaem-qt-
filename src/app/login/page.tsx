@@ -53,7 +53,7 @@ export default function LoginPage() {
       }
     } catch {}
 
-    const result = login(email, password);
+    const result = await login(email, password);
     if (!result.success) {
       setError(result.error || '로그인에 실패했습니다.');
       setLoading(false);

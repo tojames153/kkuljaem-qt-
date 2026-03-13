@@ -46,6 +46,12 @@ export default function ReflectionPage() {
     church: { label: '교회 전체', icon: '⛪', desc: '교회 전체에 공유돼요' },
   };
 
+  const handleDelete = (id: string) => {
+    const updated = reflections.filter((r) => r.id !== id);
+    setReflections(updated);
+    localStorage.setItem('kkuljaem-reflections', JSON.stringify(updated));
+  };
+
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
     return `${d.getMonth() + 1}/${d.getDate()} ${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
@@ -163,9 +169,17 @@ export default function ReflectionPage() {
                 <div key={r.id} className="bg-white rounded-2xl p-5 shadow-sm border border-amber-50">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs text-stone-400">{formatDate(r.created_at)}</span>
-                    <span className="text-xs bg-cream px-2 py-0.5 rounded-full text-stone-500">
-                      {visibilityLabels[r.visibility].icon} {visibilityLabels[r.visibility].label}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs bg-cream px-2 py-0.5 rounded-full text-stone-500">
+                        {visibilityLabels[r.visibility].icon} {visibilityLabels[r.visibility].label}
+                      </span>
+                      <button
+                        onClick={() => handleDelete(r.id)}
+                        className="text-xs text-stone-300 hover:text-red-400 transition-colors"
+                      >
+                        삭제
+                      </button>
+                    </div>
                   </div>
                   <p className="text-stone-700 text-sm leading-relaxed">{r.reflection_text}</p>
                 </div>
