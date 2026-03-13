@@ -91,6 +91,16 @@ async function callOpenAI(apiKey: string, text: string): Promise<string | null> 
   }
 }
 
+// GET /api/ai-coach — 연결 상태 진단 (배포 후 삭제 가능)
+export async function GET() {
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
+  return NextResponse.json({
+    anthropic: anthropicKey ? `set (${anthropicKey.substring(0, 10)}...)` : 'not set',
+    openai: openaiKey ? `set (${openaiKey.substring(0, 10)}...)` : 'not set',
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { reflection_text } = await request.json();
@@ -109,7 +119,7 @@ export async function POST(request: NextRequest) {
     if (anthropicKey && anthropicKey !== 'your_anthropic_api_key_here') {
       const result = await callAnthropic(anthropicKey, reflection_text);
       if (result) {
-        return NextResponse.json({ response: result });
+        return NextResponse.json({ response: result, provider: 'anthropic' });
       }
     }
 
@@ -117,13 +127,14 @@ export async function POST(request: NextRequest) {
     if (openaiKey && openaiKey !== 'your_openai_api_key_here') {
       const result = await callOpenAI(openaiKey, reflection_text);
       if (result) {
-        return NextResponse.json({ response: result });
+        return NextResponse.json({ response: result, provider: 'openai' });
       }
     }
 
     // 3순위: 데모 응답 (API 키 없거나 모두 실패 시)
     return NextResponse.json({
       response: generateDemoResponse(reflection_text),
+      provider: 'demo',
     });
   } catch (err) {
     console.error('AI Coach error:', err);
