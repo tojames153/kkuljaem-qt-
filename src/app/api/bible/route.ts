@@ -73,23 +73,34 @@ const BOOK_MAP: Record<string, number> = {
 };
 
 // "시편 23:1-6" → { bookNum: 19, chapter: 23, startVerse: 1, endVerse: 6 }
+// "창세기 1" → { bookNum: 1, chapter: 1, startVerse: 0, endVerse: 999 } (전체 장)
 function parsePassage(passage: string) {
   // 쉼표로 여러 구절이 있으면 첫 번째만 사용
   const first = passage.split(',')[0].trim();
 
   // "책이름 장:절-절" 또는 "책이름 장:절" 패턴
-  const match = first.match(/^(.+?)\s*(\d+):(\d+)(?:\s*[-~]\s*(\d+))?/);
-  if (!match) return null;
+  const matchVerse = first.match(/^(.+?)\s*(\d+):(\d+)(?:\s*[-~]\s*(\d+))?/);
+  if (matchVerse) {
+    const bookName = matchVerse[1].trim();
+    const chapter = parseInt(matchVerse[2]);
+    const startVerse = parseInt(matchVerse[3]);
+    const endVerse = matchVerse[4] ? parseInt(matchVerse[4]) : startVerse;
+    const bookNum = BOOK_MAP[bookName];
+    if (!bookNum) return null;
+    return { bookNum, chapter, startVerse, endVerse };
+  }
 
-  const bookName = match[1].trim();
-  const chapter = parseInt(match[2]);
-  const startVerse = parseInt(match[3]);
-  const endVerse = match[4] ? parseInt(match[4]) : startVerse;
+  // "책이름 장" 패턴 (전체 장)
+  const matchChapter = first.match(/^(.+?)\s+(\d+)$/);
+  if (matchChapter) {
+    const bookName = matchChapter[1].trim();
+    const chapter = parseInt(matchChapter[2]);
+    const bookNum = BOOK_MAP[bookName];
+    if (!bookNum) return null;
+    return { bookNum, chapter, startVerse: 0, endVerse: 999 };
+  }
 
-  const bookNum = BOOK_MAP[bookName];
-  if (!bookNum) return null;
-
-  return { bookNum, chapter, startVerse, endVerse };
+  return null;
 }
 
 const VALID_TRANSLATIONS = ['KRV', 'NIV', 'HKJV'];
@@ -106,9 +117,11 @@ async function fetchFromGetBible(parsed: { bookNum: number; chapter: number; sta
   const data = await res.json();
   const allVerses: { verse: number; text: string }[] = data.verses || [];
 
-  return allVerses
-    .filter((v) => v.verse >= parsed.startVerse && v.verse <= parsed.endVerse)
-    .map((v) => ({ verse: v.verse, text: v.text.replace(/^\s*¶\s*/, '').trim() }));
+  const filtered = parsed.startVerse === 0
+    ? allVerses
+    : allVerses.filter((v) => v.verse >= parsed.startVerse && v.verse <= parsed.endVerse);
+
+  return filtered.map((v) => ({ verse: v.verse, text: v.text.replace(/^\s*¶\s*/, '').trim() }));
 }
 
 // bolls.life API에서 KRV/NIV 가져오기
@@ -122,9 +135,11 @@ async function fetchFromBolls(translation: string, parsed: { bookNum: number; ch
 
   const allVerses: { verse: number; text: string }[] = await res.json();
 
-  return allVerses
-    .filter((v) => v.verse >= parsed.startVerse && v.verse <= parsed.endVerse)
-    .map((v) => ({ verse: v.verse, text: v.text }));
+  const filtered = parsed.startVerse === 0
+    ? allVerses
+    : allVerses.filter((v) => v.verse >= parsed.startVerse && v.verse <= parsed.endVerse);
+
+  return filtered.map((v) => ({ verse: v.verse, text: v.text }));
 }
 
 export async function GET(request: NextRequest) {

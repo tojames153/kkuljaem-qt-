@@ -96,3 +96,8 @@ body {
 .btn-honey:active {
   transform: translateY(0);
 }
+
+/* 아이폰 홈바 영역 대응 */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}

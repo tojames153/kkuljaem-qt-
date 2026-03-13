@@ -7,6 +7,7 @@ import DevotionalCard from '@/components/DevotionalCard';
 import { getTodayDevotional } from '@/lib/sample-devotional';
 import { Devotional, AgeGroup } from '@/types';
 import { useAuth } from '@/lib/auth-context';
+import { getExtendedAgeContent } from '@/lib/age-devotion-helper';
 
 export default function DevotionalPage() {
   const [devotional, setDevotional] = useState<Devotional | null>(null);
@@ -56,17 +57,14 @@ export default function DevotionalPage() {
     );
   }
 
-  const ageContent = {
-    children: devotional.age_children,
-    youth: devotional.age_youth,
-    young_adult: devotional.age_young_adult,
-  };
-
   const ageLabels: Record<string, string> = {
     children: '어린이',
     youth: '청소년',
     young_adult: '청년',
   };
+
+  const validAgeGroup = ageGroup as 'children' | 'youth' | 'young_adult';
+  const extendedContent = getExtendedAgeContent(devotional, validAgeGroup);
 
   return (
     <AppShell>
@@ -109,10 +107,39 @@ export default function DevotionalPage() {
               ))}
             </div>
 
-            {/* 선택된 연령 콘텐츠 */}
-            <div className="bg-cream rounded-2xl p-5">
-              <p className="text-stone-700 text-[15px] leading-relaxed">
-                {ageContent[ageGroup as keyof typeof ageContent] || '콘텐츠가 준비 중이에요.'}
+            {/* 묵상 가이드 */}
+            <div className="bg-cream rounded-2xl p-5 space-y-4">
+              <div>
+                <p className="text-xs font-semibold text-amber-600 mb-1.5">오늘의 묵상 안내</p>
+                <p className="text-stone-700 text-[15px] leading-relaxed">
+                  {extendedContent.mainGuide || '콘텐츠가 준비 중이에요.'}
+                </p>
+              </div>
+
+              <div className="border-t border-amber-100 pt-3">
+                <p className="text-xs font-semibold text-amber-600 mb-1.5">적용 도움</p>
+                <p className="text-stone-600 text-sm leading-relaxed">
+                  {extendedContent.applicationTip}
+                </p>
+              </div>
+            </div>
+
+            {/* 기도 안내 */}
+            <div className="bg-white rounded-2xl p-5 shadow-sm border border-amber-50">
+              <p className="text-xs font-semibold text-amber-600 mb-2">함께 기도해요</p>
+              <p className="text-stone-600 text-sm leading-relaxed italic">
+                {extendedContent.prayerGuide}
+              </p>
+            </div>
+
+            {/* 실천 과제 */}
+            <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-5">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-base">✅</span>
+                <p className="text-xs font-semibold text-amber-700">오늘의 실천</p>
+              </div>
+              <p className="text-stone-700 text-sm leading-relaxed font-medium">
+                {extendedContent.actionStep}
               </p>
             </div>
           </div>

@@ -28,10 +28,11 @@ export default function LoginPage() {
   }, []);
 
   // 이미 로그인된 경우 홈으로
-  if (user) {
-    router.push('/');
-    return null;
-  }
+  useEffect(() => {
+    if (user) router.push('/');
+  }, [user, router]);
+
+  if (user) return null;
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();

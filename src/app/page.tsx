@@ -71,16 +71,23 @@ export default function HomePage() {
           <div className="flex gap-1 mt-3">
             {['주일', '월', '화', '수', '목', '금', '토'].map((d, i) => {
               const todayIdx = new Date().getDay(); // 일=0 ~ 토=6
-              const isChecked = i <= todayIdx && i > todayIdx - streak;
+              // 이번 주 해당 요일의 날짜를 구해서 streak 데이터와 대조
+              const dayDiff = i - todayIdx;
+              const dayDate = new Date();
+              dayDate.setDate(dayDate.getDate() + dayDiff);
+              const isPast = i <= todayIdx;
+              // streak 일수 내에 있고 과거인 경우만 체크
+              const isChecked = isPast && streak > 0 && (todayIdx - i) < streak;
+              const isFuture = i > todayIdx;
               return (
                 <div key={d} className="flex-1 text-center">
                   <div
                     className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-xs font-bold ${
                       isChecked
                         ? 'bg-white text-amber-500'
-                        : i <= todayIdx
-                          ? 'bg-white/20 text-white/60'
-                          : 'bg-white/10 text-white/40'
+                        : isFuture
+                          ? 'bg-white/10 text-white/40'
+                          : 'bg-white/20 text-white/60'
                     }`}
                   >
                     {isChecked ? '✓' : d}

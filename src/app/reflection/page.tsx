@@ -37,7 +37,11 @@ export default function ReflectionPage() {
     setReflections(updated);
     localStorage.setItem('kkuljaem-reflections', JSON.stringify(updated));
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setText('');
+    setTimeout(() => {
+      setSaved(false);
+      setActiveTab('list');
+    }, 1500);
   };
 
   const visibilityLabels: Record<Visibility, { label: string; icon: string; desc: string }> = {

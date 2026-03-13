@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import AppShell from '@/components/AppShell';
 import { getTodayReading, getReadingForDay, DailyReading } from '@/lib/bible-reading-plan';
 import { useAuth } from '@/lib/auth-context';
@@ -10,6 +10,16 @@ interface ReadingRecord {
   date: string;
   ot: boolean;
   nt: boolean;
+}
+
+interface BibleVerse {
+  verse: number;
+  text: string;
+}
+
+interface ChapterData {
+  chapter: string;
+  verses: BibleVerse[];
 }
 
 const STORAGE_KEY = 'kkuljaem-bible-reading';
@@ -28,6 +38,32 @@ function saveRecords(records: ReadingRecord[]) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
 }
 
+// "창세기 1-2" → ["창세기 1", "창세기 2"]
+// "마태복음 5:1-26" → ["마태복음 5:1-26"]
+// "사사기 21 ~ 룻기 1" → ["사사기 21", "룻기 1"]
+function parseReadingToChapters(reading: string): string[] {
+  // "책1 장 ~ 책2 장" 패턴 (크로스-북)
+  if (reading.includes(' ~ ')) {
+    return reading.split(' ~ ').map((s) => s.trim());
+  }
+
+  // "책이름 장-장" 패턴 (여러 장)
+  const multiMatch = reading.match(/^(.+?)\s+(\d+)-(\d+)$/);
+  if (multiMatch) {
+    const book = multiMatch[1];
+    const start = parseInt(multiMatch[2]);
+    const end = parseInt(multiMatch[3]);
+    const chapters: string[] = [];
+    for (let ch = start; ch <= end; ch++) {
+      chapters.push(`${book} ${ch}`);
+    }
+    return chapters;
+  }
+
+  // "책이름 장:절-절" or "책이름 장" (단일)
+  return [reading];
+}
+
 export default function BibleReadingPage() {
   const [todayReading, setTodayReading] = useState<DailyReading | null>(null);
   const [records, setRecords] = useState<ReadingRecord[]>([]);
@@ -37,6 +73,13 @@ export default function BibleReadingPage() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const { user } = useAuth();
+
+  // 성경 읽기 상태
+  const [openSection, setOpenSection] = useState<'ot' | 'nt' | null>(null);
+  const [translation, setTranslation] = useState<'KRV' | 'HKJV' | 'NIV'>('KRV');
+  const [bibleData, setBibleData] = useState<ChapterData[]>([]);
+  const [bibleLoading, setBibleLoading] = useState(false);
+  const [bibleError, setBibleError] = useState('');
 
   useEffect(() => {
     const reading = getTodayReading();
@@ -88,8 +131,73 @@ export default function BibleReadingPage() {
     saveRecords(updated);
 
     // streak 재계산
-    if (newOt && newNt) {
-      setStreak((prev) => prev + 1);
+    const allRecords = [...updated];
+    let newStreak = 0;
+    const checkDate = new Date();
+    checkDate.setHours(0, 0, 0, 0);
+    while (true) {
+      const ds = checkDate.toISOString().split('T')[0];
+      const rec = allRecords.find((r) => r.date === ds);
+      if (rec && rec.ot && rec.nt) {
+        newStreak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else if (ds === new Date().toISOString().split('T')[0]) {
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    setStreak(newStreak);
+  };
+
+  // 성경 본문 가져오기
+  const fetchBibleText = useCallback(async (reading: string, trans: string) => {
+    setBibleLoading(true);
+    setBibleError('');
+    setBibleData([]);
+
+    const chapters = parseReadingToChapters(reading);
+    const results: ChapterData[] = [];
+
+    try {
+      for (const ch of chapters) {
+        const res = await fetch(`/api/bible?passage=${encodeURIComponent(ch)}&translation=${trans}`);
+        const data = await res.json();
+        if (data.verses && data.verses.length > 0) {
+          results.push({ chapter: ch, verses: data.verses });
+        } else if (data.error) {
+          setBibleError(data.error);
+          break;
+        }
+      }
+      setBibleData(results);
+    } catch {
+      setBibleError('성경 본문을 불러올 수 없습니다.');
+    } finally {
+      setBibleLoading(false);
+    }
+  }, []);
+
+  // 섹션 열기/닫기
+  const handleOpenSection = (section: 'ot' | 'nt') => {
+    if (openSection === section) {
+      setOpenSection(null);
+      setBibleData([]);
+      return;
+    }
+    setOpenSection(section);
+    if (todayReading) {
+      const reading = section === 'ot' ? todayReading.ot : todayReading.nt;
+      fetchBibleText(reading, translation);
+    }
+  };
+
+  // 번역 변경
+  const handleTranslationChange = (trans: 'KRV' | 'HKJV' | 'NIV') => {
+    setTranslation(trans);
+    if (openSection && todayReading) {
+      const reading = openSection === 'ot' ? todayReading.ot : todayReading.nt;
+      fetchBibleText(reading, trans);
     }
   };
 
@@ -146,6 +254,12 @@ export default function BibleReadingPage() {
 
   const badge = getBadge();
 
+  const translationTabs: [string, string][] = [
+    ['KRV', '개역한글'],
+    ['HKJV', '한글KJV'],
+    ['NIV', 'NIV'],
+  ];
+
   return (
     <AppShell>
       <div className="pt-4 space-y-5">
@@ -193,48 +307,168 @@ export default function BibleReadingPage() {
             </div>
 
             {/* 구약 */}
-            <button
-              onClick={() => handleCheck('ot')}
-              className={`w-full flex items-center gap-4 p-4 rounded-xl mb-3 transition-all text-left ${
-                otChecked
-                  ? 'bg-emerald-50 border-2 border-emerald-200'
-                  : 'bg-stone-50 border-2 border-transparent hover:border-stone-200'
-              }`}
-            >
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                otChecked ? 'bg-emerald-500 text-white' : 'bg-white border-2 border-stone-200'
-              }`}>
-                {otChecked ? '✓' : ''}
+            <div className="mb-3">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleCheck('ot')}
+                  className={`flex-1 flex items-center gap-4 p-4 rounded-xl transition-all text-left ${
+                    otChecked
+                      ? 'bg-emerald-50 border-2 border-emerald-200'
+                      : 'bg-stone-50 border-2 border-transparent hover:border-stone-200'
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    otChecked ? 'bg-emerald-500 text-white' : 'bg-white border-2 border-stone-200'
+                  }`}>
+                    {otChecked ? '✓' : ''}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-stone-400 font-medium">구약</p>
+                    <p className={`font-bold ${otChecked ? 'text-emerald-700' : 'text-brown'}`}>
+                      {todayReading.ot}
+                    </p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => handleOpenSection('ot')}
+                  className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
+                    openSection === 'ot'
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                  }`}
+                  title="성경 읽기"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                  </svg>
+                </button>
               </div>
-              <div className="flex-1">
-                <p className="text-xs text-stone-400 font-medium">구약</p>
-                <p className={`font-bold ${otChecked ? 'text-emerald-700' : 'text-brown'}`}>
-                  {todayReading.ot}
-                </p>
-              </div>
-            </button>
+            </div>
 
             {/* 신약 */}
-            <button
-              onClick={() => handleCheck('nt')}
-              className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all text-left ${
-                ntChecked
-                  ? 'bg-emerald-50 border-2 border-emerald-200'
-                  : 'bg-stone-50 border-2 border-transparent hover:border-stone-200'
-              }`}
-            >
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                ntChecked ? 'bg-emerald-500 text-white' : 'bg-white border-2 border-stone-200'
-              }`}>
-                {ntChecked ? '✓' : ''}
+            <div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => handleCheck('nt')}
+                  className={`flex-1 flex items-center gap-4 p-4 rounded-xl transition-all text-left ${
+                    ntChecked
+                      ? 'bg-emerald-50 border-2 border-emerald-200'
+                      : 'bg-stone-50 border-2 border-transparent hover:border-stone-200'
+                  }`}
+                >
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    ntChecked ? 'bg-emerald-500 text-white' : 'bg-white border-2 border-stone-200'
+                  }`}>
+                    {ntChecked ? '✓' : ''}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-stone-400 font-medium">신약</p>
+                    <p className={`font-bold ${ntChecked ? 'text-emerald-700' : 'text-brown'}`}>
+                      {todayReading.nt}
+                    </p>
+                  </div>
+                </button>
+                <button
+                  onClick={() => handleOpenSection('nt')}
+                  className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
+                    openSection === 'nt'
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'
+                  }`}
+                  title="성경 읽기"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                  </svg>
+                </button>
               </div>
-              <div className="flex-1">
-                <p className="text-xs text-stone-400 font-medium">신약</p>
-                <p className={`font-bold ${ntChecked ? 'text-emerald-700' : 'text-brown'}`}>
-                  {todayReading.nt}
-                </p>
+            </div>
+
+            {/* 성경 본문 표시 영역 */}
+            {openSection && (
+              <div className="mt-4 animate-slide-up">
+                {/* 번역 탭 */}
+                <div className="flex gap-1 mb-3 bg-stone-100 rounded-xl p-1">
+                  {translationTabs.map(([code, label]) => (
+                    <button
+                      key={code}
+                      onClick={() => handleTranslationChange(code as 'KRV' | 'HKJV' | 'NIV')}
+                      className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+                        translation === code
+                          ? 'bg-white text-emerald-700 shadow-sm'
+                          : 'text-stone-500 hover:text-stone-700'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* 본문 헤더 */}
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-bold text-brown text-sm">
+                    {openSection === 'ot' ? todayReading.ot : todayReading.nt}
+                  </h4>
+                  <button
+                    onClick={() => { setOpenSection(null); setBibleData([]); }}
+                    className="text-stone-400 hover:text-stone-600 p-1"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* 로딩 */}
+                {bibleLoading && (
+                  <div className="flex items-center justify-center gap-2 py-8">
+                    <div className="w-5 h-5 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                    <span className="text-sm text-stone-400">본문 불러오는 중...</span>
+                  </div>
+                )}
+
+                {/* 에러 */}
+                {bibleError && (
+                  <div className="py-6 text-center">
+                    <p className="text-sm text-red-500">{bibleError}</p>
+                    <button
+                      onClick={() => {
+                        if (todayReading) {
+                          const reading = openSection === 'ot' ? todayReading.ot : todayReading.nt;
+                          fetchBibleText(reading, translation);
+                        }
+                      }}
+                      className="mt-2 text-xs text-emerald-600 font-semibold"
+                    >
+                      다시 시도
+                    </button>
+                  </div>
+                )}
+
+                {/* 성경 본문 */}
+                {!bibleLoading && !bibleError && bibleData.length > 0 && (
+                  <div className="max-h-[60vh] overflow-y-auto rounded-xl bg-amber-50/50 p-4 space-y-4">
+                    {bibleData.map((chData, idx) => (
+                      <div key={idx}>
+                        {bibleData.length > 1 && (
+                          <h5 className="font-bold text-emerald-700 text-sm mb-2 sticky top-0 bg-amber-50/90 py-1">
+                            {chData.chapter}
+                          </h5>
+                        )}
+                        <div className="space-y-1.5">
+                          {chData.verses.map((v) => (
+                            <p key={v.verse} className="text-sm leading-relaxed text-stone-700">
+                              <span className="text-emerald-500 font-bold text-xs mr-1.5">{v.verse}</span>
+                              {v.text}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </button>
+            )}
 
             {otChecked && ntChecked && (
               <div className="mt-4 text-center py-3 bg-emerald-50 rounded-xl animate-fade-in">

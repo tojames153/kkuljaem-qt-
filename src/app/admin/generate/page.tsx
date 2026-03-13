@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { CHURCH_CALENDAR } from '@/lib/church-calendar';
+import { useAuth } from '@/lib/auth-context';
 
 interface Devotional {
   day: number;
@@ -23,6 +24,7 @@ interface Devotional {
 type Status = 'idle' | 'running' | 'paused' | 'done' | 'error';
 
 export default function GeneratePage() {
+  const { user } = useAuth();
   const [devotionals, setDevotionals] = useState<Devotional[]>([]);
   const [status, setStatus] = useState<Status>('idle');
   const [currentBatch, setCurrentBatch] = useState(0);
@@ -194,6 +196,19 @@ export default function GeneratePage() {
     const count = devotionals.filter((d) => d.season === s.nameKo).length;
     return { name: s.nameKo, total: s.days, done: count };
   });
+
+  // 로그인하지 않은 경우 접근 차단
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#FFFDF7] flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-2xl mb-2">🔒</p>
+          <p className="text-stone-500 font-medium">관리자 전용 페이지입니다</p>
+          <p className="text-stone-400 text-sm mt-1">로그인이 필요합니다</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FFFDF7]">
