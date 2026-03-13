@@ -46,12 +46,24 @@ export default function MemorizePage() {
   };
 
   const weekDays = ['주일', '월', '화', '수', '목', '금', '토'];
-  const thisWeekCompleted = records.filter((r) => {
-    const d = new Date(r.date);
-    const now = new Date();
-    const weekAgo = new Date(now.getTime() - 7 * 86400000);
-    return r.completed && d >= weekAgo;
-  }).length;
+
+  // 이번 주(주일~토) 완료된 요일 Set 계산
+  const getWeekStart = (date: Date) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - d.getDay()); // 주일(일요일)로 이동
+    return d;
+  };
+  const weekStart = getWeekStart(new Date());
+  const completedDays = new Set<number>();
+  records.forEach((r) => {
+    if (!r.completed) return;
+    const d = new Date(r.date + 'T00:00:00');
+    if (d >= weekStart && d < new Date(weekStart.getTime() + 7 * 86400000)) {
+      completedDays.add(d.getDay()); // 0=주일, 1=월, ..., 6=토
+    }
+  });
+  const thisWeekCompleted = completedDays.size;
 
   // 구절에서 일부를 빈칸으로 만드는 힌트 생성
   const getHintText = (verse: string) => {
@@ -71,20 +83,23 @@ export default function MemorizePage() {
             <span className="text-amber-600 font-bold">{thisWeekCompleted}/7</span>
           </div>
           <div className="flex gap-2">
-            {weekDays.map((d, i) => (
-              <div key={d} className="flex-1 text-center">
-                <div
-                  className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center text-xs font-bold mb-1 ${
-                    i < thisWeekCompleted
-                      ? 'bg-honey text-white'
-                      : 'bg-white text-stone-300 border border-stone-100'
-                  }`}
-                >
-                  {i < thisWeekCompleted ? '✓' : ''}
+            {weekDays.map((d, i) => {
+              const isDone = completedDays.has(i); // i: 0=주일, 1=월, ..., 6=토
+              return (
+                <div key={d} className="flex-1 text-center">
+                  <div
+                    className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center text-xs font-bold mb-1 ${
+                      isDone
+                        ? 'bg-honey text-white'
+                        : 'bg-white text-stone-300 border border-stone-100'
+                    }`}
+                  >
+                    {isDone ? '✓' : ''}
+                  </div>
+                  <span className="text-[10px] text-stone-400">{d}</span>
                 </div>
-                <span className="text-[10px] text-stone-400">{d}</span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
