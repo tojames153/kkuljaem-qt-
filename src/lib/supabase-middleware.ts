@@ -5,7 +5,7 @@ export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // 데모 모드: Supabase 미설정 시 인증 우회
+  // Supabase 미설정 시 통과
   if (!supabaseUrl || supabaseUrl === 'your_supabase_url_here' || !supabaseKey || supabaseKey === 'your_supabase_anon_key_here') {
     return NextResponse.next({ request });
   }
@@ -29,20 +29,9 @@ export async function updateSession(request: NextRequest) {
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // 세션 갱신 (쿠키 유지 목적)
+  await supabase.auth.getUser();
 
-  const publicPaths = ['/login', '/signup', '/api/', '/'];
-  const isPublic = publicPaths.some((p) =>
-    p === '/' ? request.nextUrl.pathname === '/' : request.nextUrl.pathname.startsWith(p)
-  );
-
-  if (!user && !isPublic) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
-  }
-
+  // 모든 페이지 공개 — 인증은 클라이언트(localStorage)에서 처리
   return supabaseResponse;
 }
