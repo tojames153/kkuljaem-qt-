@@ -20,6 +20,12 @@ function parseMemoryVerse(mv: string): { text: string; ref: string } {
   return { text: mv, ref: '' };
 }
 
+// 로컬 날짜 (한국 시간 기준) YYYY-MM-DD
+function getLocalDateStr(date?: Date): string {
+  const d = date || new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export default function MemorizePage() {
   const [devotional, setDevotional] = useState<Devotional | null>(null);
   const [flipped, setFlipped] = useState(false);
@@ -39,7 +45,7 @@ export default function MemorizePage() {
       try {
         const parsed: MemorizeRecord[] = JSON.parse(stored);
         setRecords(parsed);
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateStr();
         setTodayCompleted(parsed.some((r) => r.date === today && r.completed));
       } catch {
         setRecords([]);
@@ -68,16 +74,26 @@ export default function MemorizePage() {
 
   const handleComplete = () => {
     if (!devotional?.memory_verse) return;
-    const today = new Date().toISOString().split('T')[0];
-    const newRecord: MemorizeRecord = {
-      verse: devotional.memory_verse,
-      date: today,
-      completed: true,
-    };
-    const updated = [newRecord, ...records.filter((r) => r.date !== today)];
-    setRecords(updated);
-    localStorage.setItem('kkuljaem-memorize', JSON.stringify(updated));
-    setTodayCompleted(true);
+    const today = getLocalDateStr();
+
+    if (todayCompleted) {
+      // 완료 취소
+      const updated = records.filter((r) => r.date !== today);
+      setRecords(updated);
+      localStorage.setItem('kkuljaem-memorize', JSON.stringify(updated));
+      setTodayCompleted(false);
+    } else {
+      // 완료 체크
+      const newRecord: MemorizeRecord = {
+        verse: devotional.memory_verse,
+        date: today,
+        completed: true,
+      };
+      const updated = [newRecord, ...records.filter((r) => r.date !== today)];
+      setRecords(updated);
+      localStorage.setItem('kkuljaem-memorize', JSON.stringify(updated));
+      setTodayCompleted(true);
+    }
   };
 
   const weekDays = ['주일', '월', '화', '수', '목', '금', '토'];
@@ -93,7 +109,9 @@ export default function MemorizePage() {
   const completedDays = new Set<number>();
   records.forEach((r) => {
     if (!r.completed) return;
-    const d = new Date(r.date + 'T00:00:00');
+    // r.date는 "YYYY-MM-DD" 형식 — 로컬 시간으로 파싱
+    const parts = r.date.split('-');
+    const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
     if (d >= weekStart && d < new Date(weekStart.getTime() + 7 * 86400000)) {
       completedDays.add(d.getDay());
     }
@@ -239,10 +257,13 @@ export default function MemorizePage() {
             </button>
 
             {todayCompleted ? (
-              <div className="w-full bg-green-50 py-4 rounded-2xl text-center">
+              <button
+                onClick={handleComplete}
+                className="w-full bg-green-50 py-4 rounded-2xl text-center hover:bg-green-100 transition-colors"
+              >
                 <span className="text-green-600 font-bold text-base">오늘 암송 완료!</span>
-                <p className="text-green-500 text-xs mt-1">잘 하고 있어요! 내일도 함께해요</p>
-              </div>
+                <p className="text-green-500 text-xs mt-1">탭하여 취소할 수 있어요</p>
+              </button>
             ) : (
               <button
                 onClick={handleComplete}

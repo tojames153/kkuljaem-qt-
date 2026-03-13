@@ -24,6 +24,12 @@ interface ChapterData {
 
 const STORAGE_KEY = 'kkuljaem-bible-reading';
 
+// 로컬 날짜 YYYY-MM-DD
+function getLocalDateStr(date?: Date): string {
+  const d = date || new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 function getStoredRecords(): ReadingRecord[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -89,7 +95,7 @@ export default function BibleReadingPage() {
     setRecords(stored);
 
     // 오늘 완료 여부
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateStr();
     const todayRecord = stored.find((r) => r.date === today);
     if (todayRecord) {
       setOtChecked(todayRecord.ot);
@@ -101,12 +107,12 @@ export default function BibleReadingPage() {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     while (true) {
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = getLocalDateStr(d);
       const rec = stored.find((r) => r.date === dateStr);
       if (rec && rec.ot && rec.nt) {
         count++;
         d.setDate(d.getDate() - 1);
-      } else if (dateStr === new Date().toISOString().split('T')[0]) {
+      } else if (dateStr === getLocalDateStr()) {
         // 오늘은 아직 안 했어도 OK
         d.setDate(d.getDate() - 1);
       } else {
@@ -118,7 +124,7 @@ export default function BibleReadingPage() {
 
   const handleCheck = (type: 'ot' | 'nt') => {
     if (!todayReading) return;
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateStr();
     const newOt = type === 'ot' ? !otChecked : otChecked;
     const newNt = type === 'nt' ? !ntChecked : ntChecked;
 
@@ -136,12 +142,12 @@ export default function BibleReadingPage() {
     const checkDate = new Date();
     checkDate.setHours(0, 0, 0, 0);
     while (true) {
-      const ds = checkDate.toISOString().split('T')[0];
+      const ds = getLocalDateStr(checkDate);
       const rec = allRecords.find((r) => r.date === ds);
       if (rec && rec.ot && rec.nt) {
         newStreak++;
         checkDate.setDate(checkDate.getDate() - 1);
-      } else if (ds === new Date().toISOString().split('T')[0]) {
+      } else if (ds === getLocalDateStr()) {
         checkDate.setDate(checkDate.getDate() - 1);
       } else {
         break;
