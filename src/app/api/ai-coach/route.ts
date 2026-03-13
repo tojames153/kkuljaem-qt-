@@ -25,6 +25,72 @@ const SYSTEM_PROMPT = `당신은 기독교 영성 상담가입니다.
 - 성경 중심 관점 유지
 - 각 섹션 제목(💛, 📖, 💭, 🙏)을 반드시 포함할 것`;
 
+// Anthropic Claude API 호출
+async function callAnthropic(apiKey: string, text: string): Promise<string | null> {
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1200,
+        system: SYSTEM_PROMPT,
+        messages: [
+          { role: 'user', content: text },
+        ],
+      }),
+    });
+
+    if (!res.ok) {
+      console.error('Anthropic API error:', res.status, await res.text());
+      return null;
+    }
+
+    const data = await res.json();
+    return data.content?.[0]?.text || null;
+  } catch (err) {
+    console.error('Anthropic API call failed:', err);
+    return null;
+  }
+}
+
+// OpenAI API 호출
+async function callOpenAI(apiKey: string, text: string): Promise<string | null> {
+  try {
+    const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: text },
+        ],
+        temperature: 0.7,
+        max_tokens: 1200,
+      }),
+    });
+
+    if (!res.ok) {
+      console.error('OpenAI API error:', res.status, await res.text());
+      return null;
+    }
+
+    const data = await res.json();
+    return data.choices?.[0]?.message?.content || null;
+  } catch (err) {
+    console.error('OpenAI API call failed:', err);
+    return null;
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { reflection_text } = await request.json();
@@ -36,45 +102,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    const openaiKey = process.env.OPENAI_API_KEY;
 
-    // OpenAI API가 설정되지 않은 경우 데모 응답
-    if (!apiKey || apiKey === 'your_openai_api_key_here') {
-      return NextResponse.json({
-        response: generateDemoResponse(reflection_text),
-      });
+    // 1순위: Anthropic Claude API
+    if (anthropicKey && anthropicKey !== 'your_anthropic_api_key_here') {
+      const result = await callAnthropic(anthropicKey, reflection_text);
+      if (result) {
+        return NextResponse.json({ response: result });
+      }
     }
 
-    // OpenAI API 호출
-    const res = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: reflection_text },
-        ],
-        temperature: 0.7,
-        max_tokens: 1200,
-      }),
-    });
-
-    if (!res.ok) {
-      const errBody = await res.text();
-      console.error('OpenAI API error:', res.status, errBody);
-      // API 실패 시 데모 응답으로 폴백
-      return NextResponse.json({
-        response: generateDemoResponse(reflection_text),
-      });
+    // 2순위: OpenAI API
+    if (openaiKey && openaiKey !== 'your_openai_api_key_here') {
+      const result = await callOpenAI(openaiKey, reflection_text);
+      if (result) {
+        return NextResponse.json({ response: result });
+      }
     }
 
-    const data = await res.json();
+    // 3순위: 데모 응답 (API 키 없거나 모두 실패 시)
     return NextResponse.json({
-      response: data.choices[0].message.content,
+      response: generateDemoResponse(reflection_text),
     });
   } catch (err) {
     console.error('AI Coach error:', err);
@@ -86,7 +135,6 @@ export async function POST(request: NextRequest) {
 }
 
 function generateDemoResponse(text: string): string {
-  // 사용자 입력에 따라 약간 다른 응답 생성
   const keywords = ['감사', '기쁨', '사랑', '두려움', '걱정', '힘든', '어려운', '슬픔', '용서', '기도'];
   const found = keywords.find((k) => text.includes(k));
 
