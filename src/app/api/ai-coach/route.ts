@@ -46,15 +46,17 @@ async function callAnthropic(apiKey: string, text: string): Promise<string | nul
     });
 
     if (!res.ok) {
-      console.error('Anthropic API error:', res.status, await res.text());
-      return null;
+      const errText = await res.text();
+      console.error('Anthropic API error:', res.status, errText);
+      // 임시 디버그: 에러 내용을 반환
+      return `[Anthropic 오류 ${res.status}]: ${errText}`;
     }
 
     const data = await res.json();
     return data.content?.[0]?.text || null;
   } catch (err) {
     console.error('Anthropic API call failed:', err);
-    return null;
+    return `[Anthropic 연결 실패]: ${err instanceof Error ? err.message : String(err)}`;
   }
 }
 
