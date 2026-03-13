@@ -20,8 +20,8 @@ export default function SignupPage() {
   const { signup } = useAuth();
 
   const ageOptions: { value: AgeGroup; label: string; emoji: string; desc: string }[] = [
-    { value: 'children', label: '초등학생', emoji: '🌱', desc: '쉽고 재미있는 묵상' },
-    { value: 'youth', label: '중고등학생', emoji: '🌿', desc: '질문과 함께하는 묵상' },
+    { value: 'children', label: '어린이', emoji: '🌱', desc: '쉽고 재미있는 묵상' },
+    { value: 'youth', label: '청소년', emoji: '🌿', desc: '질문과 함께하는 묵상' },
     { value: 'young_adult', label: '청년', emoji: '🌳', desc: '깊이 있는 영적 묵상' },
     { value: 'teacher', label: '교사/교역자', emoji: '📖', desc: '교육 자료와 함께' },
   ];

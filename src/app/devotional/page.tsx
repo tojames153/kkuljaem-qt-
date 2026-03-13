@@ -63,8 +63,8 @@ export default function DevotionalPage() {
   };
 
   const ageLabels: Record<string, string> = {
-    children: '초등학생',
-    youth: '중고등학생',
+    children: '어린이',
+    youth: '청소년',
     young_adult: '청년',
   };
 

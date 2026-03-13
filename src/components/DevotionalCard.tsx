@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Devotional } from '@/types';
+import { getAgeCcm } from '@/lib/ccm-recommendations';
 
 interface BibleVerse {
   verse: number;
@@ -174,36 +175,52 @@ export default function DevotionalCard({ devotional, compact = false }: Props) {
         <p className="text-stone-700 leading-relaxed italic text-[15px]">{devotional.prayer}</p>
       </div>
 
-      {/* 오늘의 찬양 — YouTube 연결 */}
-      {devotional.ccm && (
-        <a
-          href={`https://www.youtube.com/results?search_query=${encodeURIComponent(devotional.ccm + ' 찬양')}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 rounded-2xl overflow-hidden shadow-sm border border-orange-100 hover:shadow-md transition-all"
-        >
-          <div className="px-5 pt-4 pb-1">
-            <div className="flex items-center gap-2">
-              <span className="text-sm">🎵</span>
-              <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">오늘의 찬양</span>
+      {/* 오늘의 찬양 — 연령별 3곡 추천 */}
+      {devotional.ccm && (() => {
+        const ageCcm = getAgeCcm(devotional);
+        const songs = [
+          { label: '어린이', emoji: '🌱', song: ageCcm.children },
+          { label: '청소년', emoji: '🌿', song: ageCcm.youth },
+          { label: '청년', emoji: '🌳', song: ageCcm.young_adult },
+        ];
+        return (
+          <div className="bg-gradient-to-br from-rose-50 via-orange-50 to-amber-50 rounded-2xl overflow-hidden shadow-sm border border-orange-100">
+            <div className="px-5 pt-4 pb-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm">🎵</span>
+                <span className="text-xs font-semibold text-stone-400 uppercase tracking-wider">오늘의 찬양</span>
+              </div>
+            </div>
+            <div className="px-5 pb-4 space-y-2.5">
+              {songs.map(({ label, emoji, song }) => (
+                <a
+                  key={label}
+                  href={`https://www.youtube.com/results?search_query=${encodeURIComponent(song + ' 찬양')}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 bg-white/70 hover:bg-white rounded-xl p-3 transition-all"
+                >
+                  <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0">
+                    <svg className="w-5 h-5 text-white ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs">{emoji}</span>
+                      <span className="text-xs text-stone-400 font-medium">{label}</span>
+                    </div>
+                    <p className="text-brown font-bold text-sm truncate">{song}</p>
+                  </div>
+                  <svg className="w-4 h-4 text-stone-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                  </svg>
+                </a>
+              ))}
             </div>
           </div>
-          <div className="flex items-center gap-4 px-5 pb-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
-              <svg className="w-7 h-7 text-white ml-0.5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-brown font-bold text-base truncate">{devotional.ccm}</p>
-              <p className="text-xs text-stone-400 mt-0.5">탭하여 YouTube에서 듣기</p>
-            </div>
-            <svg className="w-5 h-5 text-stone-300 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-            </svg>
-          </div>
-        </a>
-      )}
+        );
+      })()}
 
       {/* 암송 구절 */}
       {devotional.memory_verse && (
