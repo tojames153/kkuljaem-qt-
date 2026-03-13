@@ -12,6 +12,7 @@ const pageTitles: Record<string, string> = {
   '/prayer': '기도 노트',
   '/memorize': '말씀 암송',
   '/community': '공동체 묵상',
+  '/bible-reading': '성경읽기',
   '/login': '로그인',
   '/signup': '회원가입',
 };
