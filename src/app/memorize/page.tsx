@@ -45,7 +45,7 @@ export default function MemorizePage() {
     setTodayCompleted(true);
   };
 
-  const weekDays = ['월', '화', '수', '목', '금', '토', '일'];
+  const weekDays = ['주일', '월', '화', '수', '목', '금', '토'];
   const thisWeekCompleted = records.filter((r) => {
     const d = new Date(r.date);
     const now = new Date();
