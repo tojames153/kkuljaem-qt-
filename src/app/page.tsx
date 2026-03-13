@@ -1,65 +1,128 @@
-import Image from "next/image";
+'use client';
 
-export default function Home() {
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import AppShell from '@/components/AppShell';
+import { getTodayDevotional } from '@/lib/sample-devotional';
+import { Devotional } from '@/types';
+
+export default function HomePage() {
+  const [devotional, setDevotional] = useState<Devotional | null>(null);
+  const [streak, setStreak] = useState(7);
+  const [greeting, setGreeting] = useState('');
+
+  useEffect(() => {
+    setDevotional(getTodayDevotional());
+
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting('좋은 아침이에요!');
+    else if (hour < 18) setGreeting('은혜로운 오후에요!');
+    else setGreeting('평안한 저녁이에요!');
+  }, []);
+
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`;
+  const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+  const dayStr = dayNames[today.getDay()];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <AppShell>
+      <div className="space-y-5 pt-4">
+        {/* 인사 & 날짜 */}
+        <div className="animate-fade-in">
+          <p className="text-stone-400 text-sm">{dateStr} {dayStr}요일</p>
+          <h2 className="text-xl font-bold text-brown mt-1">{greeting} 🌿</h2>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        {/* 연속 묵상 streak */}
+        <div className="bg-gradient-to-r from-amber-400 via-yellow-400 to-orange-300 rounded-2xl p-5 text-white shadow-md animate-fade-in"
+             style={{ animationDelay: '0.1s' }}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/90 text-sm font-medium">연속 묵상</p>
+              <p className="text-3xl font-extrabold mt-1">{streak}일째 🔥</p>
+            </div>
+            <div className="streak-glow text-5xl">🍯</div>
+          </div>
+          <div className="flex gap-1 mt-3">
+            {['월', '화', '수', '목', '금', '토', '일'].map((d, i) => (
+              <div key={d} className="flex-1 text-center">
+                <div
+                  className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-xs font-bold ${
+                    i < 5 ? 'bg-white text-amber-500' : i === 5 ? 'bg-white/30 text-white' : 'bg-white/10 text-white/50'
+                  }`}
+                >
+                  {i < 5 ? '✓' : d}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-      </main>
-    </div>
+
+        {/* 오늘의 말씀 카드 */}
+        {devotional && (
+          <Link href="/devotional" className="block animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-amber-50 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="bg-honey/15 text-amber-700 text-xs font-semibold px-2.5 py-1 rounded-full">
+                  {devotional.season || `Day ${devotional.day}`}
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-brown mb-1">{devotional.theme}</h3>
+              <p className="text-amber-600 text-sm font-medium mb-3">{devotional.passage}</p>
+              <p className="text-stone-600 text-sm line-clamp-2 leading-relaxed">
+                {devotional.meditation}
+              </p>
+              <div className="mt-4 btn-honey text-center py-3 rounded-xl font-semibold text-sm">
+                오늘의 묵상 시작하기
+              </div>
+            </div>
+          </Link>
+        )}
+
+        {/* 오늘의 찬양 */}
+        {devotional?.ccm && (
+          <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-2xl p-5 animate-fade-in"
+               style={{ animationDelay: '0.3s' }}>
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-honey/20 rounded-xl flex items-center justify-center text-2xl">
+                🎵
+              </div>
+              <div>
+                <p className="text-xs text-stone-400 font-medium">오늘의 찬양</p>
+                <p className="text-brown font-bold">{devotional.ccm}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 오늘의 암송 */}
+        {devotional?.memory_verse && (
+          <Link href="/memorize" className="block animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <div className="bg-cream rounded-2xl p-5 text-center hover:bg-amber-50 transition-colors">
+              <span className="text-xs text-amber-600 font-semibold">오늘의 암송 구절</span>
+              <p className="text-brown font-bold text-lg mt-2">{devotional.memory_verse}</p>
+              <p className="text-stone-500 text-xs mt-2">탭하여 암송하기 →</p>
+            </div>
+          </Link>
+        )}
+
+        {/* 빠른 메뉴 */}
+        <div className="grid grid-cols-3 gap-3 animate-fade-in" style={{ animationDelay: '0.5s' }}>
+          <Link href="/reflection" className="bg-white rounded-2xl p-4 text-center shadow-sm border border-amber-50 hover:shadow-md transition-shadow">
+            <span className="text-2xl block mb-1">✍️</span>
+            <span className="text-xs font-medium text-stone-600">묵상 기록</span>
+          </Link>
+          <Link href="/ai-coach" className="bg-white rounded-2xl p-4 text-center shadow-sm border border-amber-50 hover:shadow-md transition-shadow">
+            <span className="text-2xl block mb-1">🤖</span>
+            <span className="text-xs font-medium text-stone-600">AI 코치</span>
+          </Link>
+          <Link href="/prayer" className="bg-white rounded-2xl p-4 text-center shadow-sm border border-amber-50 hover:shadow-md transition-shadow">
+            <span className="text-2xl block mb-1">🙏</span>
+            <span className="text-xs font-medium text-stone-600">기도 노트</span>
+          </Link>
+        </div>
+      </div>
+    </AppShell>
   );
 }
