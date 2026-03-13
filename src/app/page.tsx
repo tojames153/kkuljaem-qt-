@@ -68,17 +68,25 @@ export default function HomePage() {
             <div className="streak-glow text-5xl">🍯</div>
           </div>
           <div className="flex gap-1 mt-3">
-            {['월', '화', '수', '목', '금', '토', '일'].map((d, i) => (
-              <div key={d} className="flex-1 text-center">
-                <div
-                  className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-xs font-bold ${
-                    i < 5 ? 'bg-white text-amber-500' : i === 5 ? 'bg-white/30 text-white' : 'bg-white/10 text-white/50'
-                  }`}
-                >
-                  {i < 5 ? '✓' : d}
+            {['월', '화', '수', '목', '금', '토', '일'].map((d, i) => {
+              const todayIdx = (new Date().getDay() + 6) % 7; // 월=0 ~ 일=6
+              const isChecked = i <= todayIdx && i > todayIdx - streak;
+              return (
+                <div key={d} className="flex-1 text-center">
+                  <div
+                    className={`w-7 h-7 mx-auto rounded-full flex items-center justify-center text-xs font-bold ${
+                      isChecked
+                        ? 'bg-white text-amber-500'
+                        : i <= todayIdx
+                          ? 'bg-white/20 text-white/60'
+                          : 'bg-white/10 text-white/40'
+                    }`}
+                  >
+                    {isChecked ? '✓' : d}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
