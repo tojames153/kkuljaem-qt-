@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import { createClient } from '@/lib/supabase-browser';
 import { AgeGroup } from '@/types';
 
 export default function SignupPage() {
@@ -12,12 +11,13 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
   const [ageGroup, setAgeGroup] = useState<AgeGroup>('youth');
   const [churchName, setChurchName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { signup: demoSignup } = useAuth();
+  const { signup } = useAuth();
 
   const ageOptions: { value: AgeGroup; label: string; emoji: string; desc: string }[] = [
     { value: 'children', label: '초등학생', emoji: '🌱', desc: '쉽고 재미있는 묵상' },
@@ -26,59 +26,49 @@ export default function SignupPage() {
     { value: 'teacher', label: '교사/교역자', emoji: '📖', desc: '교육 자료와 함께' },
   ];
 
-  const handleSignup = async () => {
+  const validateStep1 = () => {
+    if (!name.trim()) {
+      setError('이름을 입력해주세요.');
+      return false;
+    }
+    if (!email.trim()) {
+      setError('이메일을 입력해주세요.');
+      return false;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError('올바른 이메일 형식을 입력해주세요.');
+      return false;
+    }
+    if (password.length < 6) {
+      setError('비밀번호는 6자 이상이어야 합니다.');
+      return false;
+    }
+    if (password !== passwordConfirm) {
+      setError('비밀번호가 일치하지 않습니다.');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSignup = () => {
     setError('');
     setLoading(true);
 
-    const supabase = createClient();
+    const result = signup({
+      name: name.trim(),
+      email: email.trim(),
+      password,
+      age_group: ageGroup,
+      church_name: churchName.trim(),
+    });
 
-    if (!supabase) {
-      // 데모 모드: localStorage 기반 회원가입
-      const result = demoSignup({
-        name,
-        email,
-        password,
-        age_group: ageGroup,
-        church_name: churchName,
-      });
-      if (!result.success) {
-        setError(result.error || '회원가입에 실패했습니다.');
-        setLoading(false);
-        return;
-      }
-      router.push('/');
+    if (!result.success) {
+      setError(result.error || '회원가입에 실패했습니다.');
+      setLoading(false);
       return;
     }
 
-    try {
-      const { error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-            age_group: ageGroup,
-            church_name: churchName,
-          },
-        },
-      });
-
-      if (authError) {
-        if (authError.message.includes('already registered')) {
-          setError('이미 가입된 이메일입니다.');
-        } else {
-          setError('회원가입에 실패했습니다. 다시 시도해주세요.');
-        }
-        return;
-      }
-
-      router.push('/');
-      router.refresh();
-    } catch {
-      setError('네트워크 오류가 발생했습니다.');
-    } finally {
-      setLoading(false);
-    }
+    router.push('/');
   };
 
   return (
@@ -143,22 +133,32 @@ export default function SignupPage() {
                 className="w-full bg-white rounded-xl px-4 py-3.5 border-2 border-amber-100 focus:border-honey focus:outline-none text-stone-700 placeholder:text-stone-300 transition-colors"
               />
             </div>
-            <button
-              onClick={() => {
-                if (!name.trim() || !email.trim() || password.length < 6) {
-                  setError('모든 필드를 올바르게 입력해주세요. (비밀번호 6자 이상)');
-                  return;
-                }
-                setError('');
-                setStep(2);
-              }}
-              className="w-full btn-honey py-4 rounded-2xl font-bold text-base shadow-md mt-2"
-            >
-              다음 →
-            </button>
+            <div>
+              <label className="block text-sm font-semibold text-brown mb-1.5">비밀번호 확인</label>
+              <input
+                type="password"
+                value={passwordConfirm}
+                onChange={(e) => setPasswordConfirm(e.target.value)}
+                placeholder="비밀번호를 다시 입력하세요"
+                className="w-full bg-white rounded-xl px-4 py-3.5 border-2 border-amber-100 focus:border-honey focus:outline-none text-stone-700 placeholder:text-stone-300 transition-colors"
+              />
+            </div>
+
             {error && (
               <p className="text-red-500 text-sm bg-red-50 rounded-xl px-4 py-3">{error}</p>
             )}
+
+            <button
+              onClick={() => {
+                setError('');
+                if (validateStep1()) {
+                  setStep(2);
+                }
+              }}
+              className="w-full btn-honey py-4 rounded-2xl font-bold text-base shadow-md mt-2"
+            >
+              다음
+            </button>
           </div>
         )}
 
@@ -191,16 +191,16 @@ export default function SignupPage() {
             </div>
             <div className="flex gap-3 mt-4">
               <button
-                onClick={() => setStep(1)}
+                onClick={() => { setError(''); setStep(1); }}
                 className="flex-1 py-3.5 rounded-2xl bg-stone-100 text-stone-500 font-semibold"
               >
-                ← 이전
+                이전
               </button>
               <button
-                onClick={() => setStep(3)}
+                onClick={() => { setError(''); setStep(3); }}
                 className="flex-1 btn-honey py-3.5 rounded-2xl font-bold shadow-md"
               >
-                다음 →
+                다음
               </button>
             </div>
           </div>
@@ -212,14 +212,40 @@ export default function SignupPage() {
             <h2 className="text-lg font-bold text-brown">소속 교회를 알려주세요</h2>
             <p className="text-sm text-stone-500">공동체 묵상에서 교회 친구들과 함께할 수 있어요</p>
             <div>
-              <label className="block text-sm font-semibold text-brown mb-1.5">교회명</label>
+              <label className="block text-sm font-semibold text-brown mb-1.5">교회명 (선택)</label>
               <input
                 type="text"
                 value={churchName}
                 onChange={(e) => setChurchName(e.target.value)}
-                placeholder="교회 이름을 입력하세요 (선택)"
+                placeholder="예: 사랑의교회, 온누리교회"
                 className="w-full bg-white rounded-xl px-4 py-3.5 border-2 border-amber-100 focus:border-honey focus:outline-none text-stone-700 placeholder:text-stone-300 transition-colors"
               />
+              <p className="text-xs text-stone-400 mt-1.5">교회명은 나중에 프로필에서 수정할 수 있어요</p>
+            </div>
+
+            {/* 가입 정보 확인 */}
+            <div className="bg-amber-50/50 rounded-2xl p-4 space-y-2">
+              <p className="text-xs font-semibold text-amber-700 mb-2">가입 정보 확인</p>
+              <div className="flex justify-between text-sm">
+                <span className="text-stone-500">이름</span>
+                <span className="text-brown font-medium">{name}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-stone-500">이메일</span>
+                <span className="text-brown font-medium">{email}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-stone-500">연령대</span>
+                <span className="text-brown font-medium">
+                  {ageOptions.find(o => o.value === ageGroup)?.label}
+                </span>
+              </div>
+              {churchName.trim() && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-stone-500">교회</span>
+                  <span className="text-brown font-medium">{churchName}</span>
+                </div>
+              )}
             </div>
 
             {error && (
@@ -228,26 +254,19 @@ export default function SignupPage() {
 
             <div className="flex gap-3 mt-4">
               <button
-                onClick={() => setStep(2)}
+                onClick={() => { setError(''); setStep(2); }}
                 className="flex-1 py-3.5 rounded-2xl bg-stone-100 text-stone-500 font-semibold"
               >
-                ← 이전
+                이전
               </button>
               <button
                 onClick={handleSignup}
                 disabled={loading}
                 className="flex-1 btn-honey py-3.5 rounded-2xl font-bold shadow-md"
               >
-                {loading ? '가입 중...' : '가입 완료 🎉'}
+                {loading ? '가입 중...' : '가입 완료'}
               </button>
             </div>
-
-            <button
-              onClick={handleSignup}
-              className="w-full text-center text-sm text-stone-400 mt-2"
-            >
-              교회 없이 가입하기
-            </button>
           </div>
         )}
       </div>
