@@ -71,7 +71,7 @@ interface Props {
 
 export default function DevotionalCard({ devotional, compact = false }: Props) {
   const [showBible, setShowBible] = useState(true);
-  const [bibleTranslation, setBibleTranslation] = useState<'KRV' | 'NIV'>('KRV');
+  const [bibleTranslation, setBibleTranslation] = useState<'KRV' | 'HKJV' | 'NIV'>('KRV');
 
   if (compact) {
     return (
@@ -119,7 +119,7 @@ export default function DevotionalCard({ devotional, compact = false }: Props) {
         {showBible && (
           <div className="mt-3">
             <div className="flex gap-2 mb-4">
-              {([['KRV', '개역한글'], ['NIV', 'NIV']] as const).map(([key, label]) => (
+              {([['KRV', '개역한글'], ['HKJV', '한글KJV'], ['NIV', 'NIV']] as const).map(([key, label]) => (
                 <button
                   key={key}
                   onClick={() => setBibleTranslation(key)}

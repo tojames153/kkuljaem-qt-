@@ -92,7 +92,40 @@ function parsePassage(passage: string) {
   return { bookNum, chapter, startVerse, endVerse };
 }
 
-const VALID_TRANSLATIONS = ['KRV', 'NIV'];
+const VALID_TRANSLATIONS = ['KRV', 'NIV', 'HKJV'];
+
+// getbible.net API에서 한글킹제임스 가져오기
+async function fetchFromGetBible(parsed: { bookNum: number; chapter: number; startVerse: number; endVerse: number }) {
+  const res = await fetch(
+    `https://api.getbible.net/v2/koreankjv/${parsed.bookNum}/${parsed.chapter}.json`,
+    { next: { revalidate: 86400 } }
+  );
+
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  const allVerses: { verse: number; text: string }[] = data.verses || [];
+
+  return allVerses
+    .filter((v) => v.verse >= parsed.startVerse && v.verse <= parsed.endVerse)
+    .map((v) => ({ verse: v.verse, text: v.text.replace(/^\s*¶\s*/, '').trim() }));
+}
+
+// bolls.life API에서 KRV/NIV 가져오기
+async function fetchFromBolls(translation: string, parsed: { bookNum: number; chapter: number; startVerse: number; endVerse: number }) {
+  const res = await fetch(
+    `https://bolls.life/get-text/${translation}/${parsed.bookNum}/${parsed.chapter}/`,
+    { next: { revalidate: 86400 } }
+  );
+
+  if (!res.ok) return null;
+
+  const allVerses: { verse: number; text: string }[] = await res.json();
+
+  return allVerses
+    .filter((v) => v.verse >= parsed.startVerse && v.verse <= parsed.endVerse)
+    .map((v) => ({ verse: v.verse, text: v.text }));
+}
 
 export async function GET(request: NextRequest) {
   const passage = request.nextUrl.searchParams.get('passage');
@@ -112,20 +145,13 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const res = await fetch(
-      `https://bolls.life/get-text/${translation}/${parsed.bookNum}/${parsed.chapter}/`,
-      { next: { revalidate: 86400 } } // 24시간 캐시
-    );
+    const verses = translation === 'HKJV'
+      ? await fetchFromGetBible(parsed)
+      : await fetchFromBolls(translation, parsed);
 
-    if (!res.ok) {
+    if (!verses || verses.length === 0) {
       return NextResponse.json({ error: '성경 본문을 가져올 수 없습니다.' }, { status: 502 });
     }
-
-    const allVerses: { verse: number; text: string }[] = await res.json();
-
-    const verses = allVerses
-      .filter((v) => v.verse >= parsed.startVerse && v.verse <= parsed.endVerse)
-      .map((v) => ({ verse: v.verse, text: v.text }));
 
     return NextResponse.json({ passage, verses });
   } catch {
