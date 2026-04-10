@@ -9,6 +9,7 @@ interface Props {
 }
 
 type VoiceGender = 'female' | 'male';
+type Engine = 'edge' | 'google' | 'auto';
 
 const VOICE_LABELS: Record<'ko' | 'en', { female: string; male: string }> = {
   ko: { female: '여성 (선희)', male: '남성 (인준)' },
@@ -32,6 +33,13 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
     }
     return 'female';
   });
+  const [engine, setEngine] = useState<Engine>(() => {
+    if (typeof window !== 'undefined') {
+      return (localStorage.getItem('kkuljaem-tts-engine') as Engine) || 'auto';
+    }
+    return 'auto';
+  });
+  const [googleAvailable, setGoogleAvailable] = useState(false);
   const [currentChunk, setCurrentChunk] = useState(0);
   const [totalChunks, setTotalChunks] = useState(0);
   const [error, setError] = useState('');
@@ -44,6 +52,7 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
   const audioUrlsRef = useRef<string[]>([]);
   const selectedGenderRef = useRef<VoiceGender>('female');
   const langRef = useRef<'ko' | 'en'>(lang);
+  const engineRef = useRef<Engine>('auto');
   const audioUnlockedRef = useRef(false);
 
   useEffect(() => {
@@ -52,6 +61,31 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
       localStorage.setItem('kkuljaem-tts-voice', selectedGender);
     }
   }, [selectedGender]);
+
+  useEffect(() => {
+    engineRef.current = engine;
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('kkuljaem-tts-engine', engine);
+    }
+  }, [engine]);
+
+  // 마운트 시 사용 가능한 엔진 조회
+  useEffect(() => {
+    let cancelled = false;
+    fetch('/api/tts')
+      .then((r) => r.json())
+      .then((data) => {
+        if (cancelled) return;
+        const available = !!data?.engines?.google?.available;
+        setGoogleAvailable(available);
+        // 사용자가 고품질을 골랐는데 사용 불가면 auto로 강등
+        if (!available && engineRef.current === 'google') {
+          setEngine('auto');
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   // 언어/본문이 바뀌면 재생을 중단해 새 텍스트/음성으로 다시 시작하도록
   useEffect(() => {
@@ -118,11 +152,11 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
     return chunks;
   }, []);
 
-  const fetchTtsAudio = async (chunkText: string, voice: string, voiceLang: 'ko' | 'en'): Promise<string> => {
+  const fetchTtsAudio = async (chunkText: string, voice: string, voiceLang: 'ko' | 'en', voiceEngine: Engine): Promise<string> => {
     const res = await fetch('/api/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: chunkText, voice, lang: voiceLang }),
+      body: JSON.stringify({ text: chunkText, voice, lang: voiceLang, engine: voiceEngine }),
     });
     if (!res.ok) {
       const errData = await res.json().catch(() => ({ error: 'TTS 실패' }));
@@ -179,6 +213,7 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
 
     const voice = selectedGenderRef.current;
     const voiceLang = langRef.current;
+    const voiceEngine = engineRef.current;
 
     for (let i = startIdx; i < chunks.length; i++) {
       if (!playingRef.current) break;
@@ -189,7 +224,7 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
 
       try {
         setLoading(true);
-        const audioUrl = await fetchTtsAudio(chunks[i], voice, voiceLang);
+        const audioUrl = await fetchTtsAudio(chunks[i], voice, voiceLang, voiceEngine);
         setLoading(false);
 
         if (!playingRef.current) break;
@@ -269,6 +304,13 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
     if (playing) handleStop();
   }, [playing, handleStop]);
 
+  const handleEngineChange = useCallback((next: Engine) => {
+    if (next === 'google' && !googleAvailable) return;
+    setEngine(next);
+    engineRef.current = next;
+    if (playing || paused) handleStop();
+  }, [googleAvailable, playing, paused, handleStop]);
+
   if (!text.trim()) return null;
 
   const speeds = [
@@ -309,6 +351,51 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
         </button>
         {lang === 'en' && (
           <span className="text-[10px] text-indigo-400 ml-auto">EN</span>
+        )}
+      </div>
+
+      {/* 품질 선택 (Edge / Google) */}
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-[10px] text-indigo-500 font-semibold">품질:</span>
+        <button
+          onClick={() => handleEngineChange('auto')}
+          className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all ${
+            engine === 'auto'
+              ? 'bg-indigo-500 text-white shadow-sm'
+              : 'bg-white text-indigo-400 border border-indigo-200 hover:bg-indigo-50'
+          }`}
+          title="환경에 따라 자동 선택"
+        >
+          자동
+        </button>
+        <button
+          onClick={() => handleEngineChange('edge')}
+          className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all ${
+            engine === 'edge'
+              ? 'bg-indigo-500 text-white shadow-sm'
+              : 'bg-white text-indigo-400 border border-indigo-200 hover:bg-indigo-50'
+          }`}
+          title="Microsoft Edge TTS — 무료, 빠름"
+        >
+          표준
+        </button>
+        <button
+          onClick={() => handleEngineChange('google')}
+          disabled={!googleAvailable}
+          className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all flex items-center gap-1 ${
+            engine === 'google'
+              ? 'bg-emerald-500 text-white shadow-sm'
+              : googleAvailable
+                ? 'bg-white text-emerald-500 border border-emerald-200 hover:bg-emerald-50'
+                : 'bg-stone-100 text-stone-300 border border-stone-200 cursor-not-allowed'
+          }`}
+          title={googleAvailable ? 'Google Cloud Neural2 — 가장 자연스러움' : '환경변수 GOOGLE_TTS_API_KEY 가 설정되어 있지 않음'}
+        >
+          <span>✨</span>
+          <span>고품질</span>
+        </button>
+        {!googleAvailable && (
+          <span className="text-[9px] text-stone-400 ml-auto truncate">고품질 사용하려면 API 키 설정 필요</span>
         )}
       </div>
 
