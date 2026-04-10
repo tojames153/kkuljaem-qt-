@@ -510,6 +510,7 @@ export default function BibleReadingPage() {
                     <BibleAudioPlayer
                       text={bibleData.map(ch => ch.verses.map(v => v.text).join(' ')).join(' ')}
                       label={openSection ? getReadingForSection(openSection) + ' 음성으로 듣기' : '성경 듣기'}
+                      lang={translation === 'NIV' ? 'en' : 'ko'}
                     />
                   </div>
                 )}

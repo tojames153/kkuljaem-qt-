@@ -1,17 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
 
-// 한국어 음성 매핑
-const VOICE_MAP: Record<string, string> = {
-  female: 'ko-KR-SunHiNeural',    // 여성 (선희)
-  male: 'ko-KR-InJoonNeural',     // 남성 (인준)
-  nova: 'ko-KR-SunHiNeural',      // OpenAI 호환 (여성)
-  onyx: 'ko-KR-InJoonNeural',     // OpenAI 호환 (남성)
+// 언어별 음성 매핑
+const VOICE_MAP: Record<string, Record<string, string>> = {
+  ko: {
+    female: 'ko-KR-SunHiNeural',    // 여성 (선희)
+    male: 'ko-KR-InJoonNeural',     // 남성 (인준)
+    nova: 'ko-KR-SunHiNeural',
+    onyx: 'ko-KR-InJoonNeural',
+  },
+  en: {
+    female: 'en-US-JennyNeural',    // 여성 (Jenny) — 부드럽고 자연스러운 영어 음성
+    male: 'en-US-GuyNeural',        // 남성 (Guy) — 명료하고 차분한 영어 음성
+    nova: 'en-US-JennyNeural',
+    onyx: 'en-US-GuyNeural',
+  },
 };
+
+function pickVoice(lang: string, voice: string): string {
+  const langMap = VOICE_MAP[lang] || VOICE_MAP['ko'];
+  return langMap[voice] || langMap['female'];
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, voice = 'female' } = await request.json();
+    const { text, voice = 'female', lang = 'ko' } = await request.json();
 
     if (!text || text.length === 0) {
       return NextResponse.json({ error: '텍스트가 없습니다.' }, { status: 400 });
@@ -20,8 +33,8 @@ export async function POST(request: NextRequest) {
     // 최대 글자 제한
     const truncated = text.slice(0, 5000);
 
-    // 음성 선택
-    const voiceName = VOICE_MAP[voice] || VOICE_MAP['female'];
+    // 음성 선택 (언어 + 성별)
+    const voiceName = pickVoice(lang, voice);
 
     // Microsoft Edge TTS 생성
     const tts = new MsEdgeTTS();

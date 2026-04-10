@@ -302,7 +302,7 @@ function BibleText({ passage, translation = 'KRV' }: { passage: string; translat
   return (
     <div>
       {/* 음성 듣기 */}
-      <BibleAudioPlayer text={allText} label={`${passage} 듣기`} />
+      <BibleAudioPlayer text={allText} label={`${passage} 듣기`} lang={translation === 'NIV' ? 'en' : 'ko'} />
       <div className="h-3" />
 
       {/* 도구 토글 버튼 */}

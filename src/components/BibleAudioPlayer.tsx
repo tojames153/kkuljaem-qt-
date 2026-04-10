@@ -5,16 +5,22 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 interface Props {
   text: string;
   label?: string;
+  lang?: 'ko' | 'en';
 }
 
 type VoiceGender = 'female' | 'male';
+
+const VOICE_LABELS: Record<'ko' | 'en', { female: string; male: string }> = {
+  ko: { female: '여성 (선희)', male: '남성 (인준)' },
+  en: { female: 'Female (Jenny)', male: 'Male (Guy)' },
+};
 
 const MAX_TTS_LENGTH = 4500;
 
 // 무음 mp3 (모바일 오디오 잠금 해제용, 아주 짧은 무음)
 const SILENCE_DATA_URI = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRwMHAAAAAAD/+1DEAAIF8ANKUAAAIAAANILAAAAEX/Bf/EDBQ+D5/KAgCAIHygIAmD/ygfB8HwfAgCAYPg+D4Pg+BAMHwfB8HwfB8CAYPg+D4Pg+D4EAwfB8HwfB8HwIBg+D4Pg+D4PgQDB8HwfB8HwfAgGD4Pg+D4Pg+BAMH/5cEAQBAEAQBAEAQBAEAf/7UMQOAAAAANIAAAAAAAANIAAAABCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCE';
 
-export default function BibleAudioPlayer({ text, label = '성경 듣기' }: Props) {
+export default function BibleAudioPlayer({ text, label = '성경 듣기', lang = 'ko' }: Props) {
   const [playing, setPlaying] = useState(false);
   const [paused, setPaused] = useState(false);
   const [speed, setSpeed] = useState(1);
@@ -37,6 +43,7 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기' }: Prop
   const currentChunkRef = useRef(0);
   const audioUrlsRef = useRef<string[]>([]);
   const selectedGenderRef = useRef<VoiceGender>('female');
+  const langRef = useRef<'ko' | 'en'>(lang);
   const audioUnlockedRef = useRef(false);
 
   useEffect(() => {
@@ -45,6 +52,17 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기' }: Prop
       localStorage.setItem('kkuljaem-tts-voice', selectedGender);
     }
   }, [selectedGender]);
+
+  // 언어/본문이 바뀌면 재생을 중단해 새 텍스트/음성으로 다시 시작하도록
+  useEffect(() => {
+    langRef.current = lang;
+    stopAll();
+    setPlaying(false);
+    setPaused(false);
+    setProgress(0);
+    setCurrentChunk(0);
+    setError('');
+  }, [lang, text]);
 
   useEffect(() => {
     return () => { stopAll(); };
@@ -100,11 +118,11 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기' }: Prop
     return chunks;
   }, []);
 
-  const fetchTtsAudio = async (chunkText: string, voice: string): Promise<string> => {
+  const fetchTtsAudio = async (chunkText: string, voice: string, voiceLang: 'ko' | 'en'): Promise<string> => {
     const res = await fetch('/api/tts', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text: chunkText, voice }),
+      body: JSON.stringify({ text: chunkText, voice, lang: voiceLang }),
     });
     if (!res.ok) {
       const errData = await res.json().catch(() => ({ error: 'TTS 실패' }));
@@ -160,6 +178,7 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기' }: Prop
     setError('');
 
     const voice = selectedGenderRef.current;
+    const voiceLang = langRef.current;
 
     for (let i = startIdx; i < chunks.length; i++) {
       if (!playingRef.current) break;
@@ -170,7 +189,7 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기' }: Prop
 
       try {
         setLoading(true);
-        const audioUrl = await fetchTtsAudio(chunks[i], voice);
+        const audioUrl = await fetchTtsAudio(chunks[i], voice, voiceLang);
         setLoading(false);
 
         if (!playingRef.current) break;
@@ -263,7 +282,9 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기' }: Prop
     <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-3 border border-indigo-100 mb-3">
       {/* 남성/여성 음성 선택 */}
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-[10px] text-indigo-500 font-semibold">음성 선택:</span>
+        <span className="text-[10px] text-indigo-500 font-semibold">
+          {lang === 'en' ? 'Voice:' : '음성 선택:'}
+        </span>
         <button
           onClick={() => handleGenderChange('female')}
           className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
@@ -273,7 +294,7 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기' }: Prop
           }`}
         >
           <span>👩</span>
-          <span>여성 (선희)</span>
+          <span>{VOICE_LABELS[lang].female}</span>
         </button>
         <button
           onClick={() => handleGenderChange('male')}
@@ -284,8 +305,11 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기' }: Prop
           }`}
         >
           <span>👨</span>
-          <span>남성 (인준)</span>
+          <span>{VOICE_LABELS[lang].male}</span>
         </button>
+        {lang === 'en' && (
+          <span className="text-[10px] text-indigo-400 ml-auto">EN</span>
+        )}
       </div>
 
       {/* 메인 컨트롤 */}
