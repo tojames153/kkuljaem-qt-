@@ -8,13 +8,45 @@ interface Props {
   lang?: 'ko' | 'en';
 }
 
-type VoiceGender = 'female' | 'male';
+type VoiceKey = 'sunhi' | 'jimin' | 'injoon' | 'bongjin' | 'jenny' | 'aria' | 'guy' | 'davis';
 type Engine = 'edge' | 'google' | 'auto';
 
-const VOICE_LABELS: Record<'ko' | 'en', { female: string; male: string }> = {
-  ko: { female: '여성 (선희)', male: '남성 (인준)' },
-  en: { female: 'Female (Jenny)', male: 'Male (Guy)' },
+interface VoiceOption {
+  key: VoiceKey;
+  label: string;
+  gender: 'female' | 'male';
+}
+
+const VOICE_OPTIONS: Record<'ko' | 'en', VoiceOption[]> = {
+  ko: [
+    { key: 'sunhi',   label: '선희',  gender: 'female' },
+    { key: 'jimin',   label: '지민',  gender: 'female' },
+    { key: 'injoon',  label: '인준',  gender: 'male' },
+    { key: 'bongjin', label: '봉진',  gender: 'male' },
+  ],
+  en: [
+    { key: 'jenny', label: 'Jenny', gender: 'female' },
+    { key: 'aria',  label: 'Aria',  gender: 'female' },
+    { key: 'guy',   label: 'Guy',   gender: 'male' },
+    { key: 'davis', label: 'Davis', gender: 'male' },
+  ],
 };
+
+const DEFAULT_VOICE: Record<'ko' | 'en', VoiceKey> = {
+  ko: 'sunhi',
+  en: 'jenny',
+};
+
+// 구버전 localStorage 값 ('female'/'male') → 신버전 보이스 키 마이그레이션
+function migrateVoiceValue(stored: string | null, currentLang: 'ko' | 'en'): VoiceKey {
+  if (!stored) return DEFAULT_VOICE[currentLang];
+  if (stored === 'female') return currentLang === 'ko' ? 'sunhi' : 'jenny';
+  if (stored === 'male') return currentLang === 'ko' ? 'injoon' : 'guy';
+  // 이미 신규 키면 그대로
+  const allKeys: VoiceKey[] = ['sunhi', 'jimin', 'injoon', 'bongjin', 'jenny', 'aria', 'guy', 'davis'];
+  if (allKeys.includes(stored as VoiceKey)) return stored as VoiceKey;
+  return DEFAULT_VOICE[currentLang];
+}
 
 const MAX_TTS_LENGTH = 4500;
 
@@ -27,11 +59,11 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
   const [speed, setSpeed] = useState(1);
   const [progress, setProgress] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [selectedGender, setSelectedGender] = useState<VoiceGender>(() => {
+  const [selectedVoice, setSelectedVoice] = useState<VoiceKey>(() => {
     if (typeof window !== 'undefined') {
-      return (localStorage.getItem('kkuljaem-tts-voice') as VoiceGender) || 'female';
+      return migrateVoiceValue(localStorage.getItem('kkuljaem-tts-voice'), lang);
     }
-    return 'female';
+    return DEFAULT_VOICE[lang];
   });
   const [engine, setEngine] = useState<Engine>(() => {
     if (typeof window !== 'undefined') {
@@ -50,17 +82,17 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
   const playingRef = useRef(false);
   const currentChunkRef = useRef(0);
   const audioUrlsRef = useRef<string[]>([]);
-  const selectedGenderRef = useRef<VoiceGender>('female');
+  const selectedVoiceRef = useRef<VoiceKey>(selectedVoice);
   const langRef = useRef<'ko' | 'en'>(lang);
   const engineRef = useRef<Engine>('auto');
   const audioUnlockedRef = useRef(false);
 
   useEffect(() => {
-    selectedGenderRef.current = selectedGender;
+    selectedVoiceRef.current = selectedVoice;
     if (typeof window !== 'undefined') {
-      localStorage.setItem('kkuljaem-tts-voice', selectedGender);
+      localStorage.setItem('kkuljaem-tts-voice', selectedVoice);
     }
-  }, [selectedGender]);
+  }, [selectedVoice]);
 
   useEffect(() => {
     engineRef.current = engine;
@@ -90,6 +122,13 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
   // 언어/본문이 바뀌면 재생을 중단해 새 텍스트/음성으로 다시 시작하도록
   useEffect(() => {
     langRef.current = lang;
+    // 현재 선택된 음성이 새 언어의 음성 목록에 없으면 기본값으로 전환
+    const validKeys = VOICE_OPTIONS[lang].map((v) => v.key);
+    if (!validKeys.includes(selectedVoiceRef.current)) {
+      const fallback = DEFAULT_VOICE[lang];
+      setSelectedVoice(fallback);
+      selectedVoiceRef.current = fallback;
+    }
     stopAll();
     setPlaying(false);
     setPaused(false);
@@ -211,7 +250,7 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
     setPaused(false);
     setError('');
 
-    const voice = selectedGenderRef.current;
+    const voice = selectedVoiceRef.current;
     const voiceLang = langRef.current;
     const voiceEngine = engineRef.current;
 
@@ -298,11 +337,11 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
     setError('');
   }, [unlockAudio]);
 
-  const handleGenderChange = useCallback((gender: VoiceGender) => {
-    setSelectedGender(gender);
-    selectedGenderRef.current = gender;
-    if (playing) handleStop();
-  }, [playing, handleStop]);
+  const handleVoiceChange = useCallback((voiceKey: VoiceKey) => {
+    setSelectedVoice(voiceKey);
+    selectedVoiceRef.current = voiceKey;
+    if (playing || paused) handleStop();
+  }, [playing, paused, handleStop]);
 
   const handleEngineChange = useCallback((next: Engine) => {
     if (next === 'google' && !googleAvailable) return;
@@ -322,82 +361,79 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
 
   return (
     <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-xl p-3 border border-indigo-100 mb-3">
-      {/* 남성/여성 음성 선택 */}
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-[10px] text-indigo-500 font-semibold">
-          {lang === 'en' ? 'Voice:' : '음성 선택:'}
+      {/* 음성 선택 (4종) */}
+      <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+        <span className="text-[10px] text-indigo-500 font-semibold mr-0.5">
+          {lang === 'en' ? 'Voice:' : '음성:'}
         </span>
-        <button
-          onClick={() => handleGenderChange('female')}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
-            selectedGender === 'female'
-              ? 'bg-pink-500 text-white shadow-sm'
-              : 'bg-white text-pink-400 border border-pink-200 hover:bg-pink-50'
-          }`}
-        >
-          <span>👩</span>
-          <span>{VOICE_LABELS[lang].female}</span>
-        </button>
-        <button
-          onClick={() => handleGenderChange('male')}
-          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
-            selectedGender === 'male'
-              ? 'bg-blue-500 text-white shadow-sm'
-              : 'bg-white text-blue-400 border border-blue-200 hover:bg-blue-50'
-          }`}
-        >
-          <span>👨</span>
-          <span>{VOICE_LABELS[lang].male}</span>
-        </button>
+        {VOICE_OPTIONS[lang].map((opt) => {
+          const active = selectedVoice === opt.key;
+          const isFemale = opt.gender === 'female';
+          return (
+            <button
+              key={opt.key}
+              onClick={() => handleVoiceChange(opt.key)}
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
+                active
+                  ? isFemale
+                    ? 'bg-pink-500 text-white shadow-sm'
+                    : 'bg-blue-500 text-white shadow-sm'
+                  : isFemale
+                    ? 'bg-white text-pink-400 border border-pink-200 hover:bg-pink-50'
+                    : 'bg-white text-blue-400 border border-blue-200 hover:bg-blue-50'
+              }`}
+              title={`${isFemale ? '여성' : '남성'} — ${opt.label}`}
+            >
+              <span>{isFemale ? '👩' : '👨'}</span>
+              <span>{opt.label}</span>
+            </button>
+          );
+        })}
         {lang === 'en' && (
           <span className="text-[10px] text-indigo-400 ml-auto">EN</span>
         )}
       </div>
 
-      {/* 품질 선택 (Edge / Google) */}
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-[10px] text-indigo-500 font-semibold">품질:</span>
-        <button
-          onClick={() => handleEngineChange('auto')}
-          className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all ${
-            engine === 'auto'
-              ? 'bg-indigo-500 text-white shadow-sm'
-              : 'bg-white text-indigo-400 border border-indigo-200 hover:bg-indigo-50'
-          }`}
-          title="환경에 따라 자동 선택"
-        >
-          자동
-        </button>
-        <button
-          onClick={() => handleEngineChange('edge')}
-          className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all ${
-            engine === 'edge'
-              ? 'bg-indigo-500 text-white shadow-sm'
-              : 'bg-white text-indigo-400 border border-indigo-200 hover:bg-indigo-50'
-          }`}
-          title="Microsoft Edge TTS — 무료, 빠름"
-        >
-          표준
-        </button>
-        <button
-          onClick={() => handleEngineChange('google')}
-          disabled={!googleAvailable}
-          className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all flex items-center gap-1 ${
-            engine === 'google'
-              ? 'bg-emerald-500 text-white shadow-sm'
-              : googleAvailable
-                ? 'bg-white text-emerald-500 border border-emerald-200 hover:bg-emerald-50'
-                : 'bg-stone-100 text-stone-300 border border-stone-200 cursor-not-allowed'
-          }`}
-          title={googleAvailable ? 'Google Cloud Neural2 — 가장 자연스러움' : '환경변수 GOOGLE_TTS_API_KEY 가 설정되어 있지 않음'}
-        >
-          <span>✨</span>
-          <span>고품질</span>
-        </button>
-        {!googleAvailable && (
-          <span className="text-[9px] text-stone-400 ml-auto truncate">고품질 사용하려면 API 키 설정 필요</span>
-        )}
-      </div>
+      {/* 품질 선택 — Google API 키가 설정된 경우에만 노출 */}
+      {googleAvailable && (
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] text-indigo-500 font-semibold">품질:</span>
+          <button
+            onClick={() => handleEngineChange('auto')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all ${
+              engine === 'auto'
+                ? 'bg-indigo-500 text-white shadow-sm'
+                : 'bg-white text-indigo-400 border border-indigo-200 hover:bg-indigo-50'
+            }`}
+            title="환경에 따라 자동 선택"
+          >
+            자동
+          </button>
+          <button
+            onClick={() => handleEngineChange('edge')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all ${
+              engine === 'edge'
+                ? 'bg-indigo-500 text-white shadow-sm'
+                : 'bg-white text-indigo-400 border border-indigo-200 hover:bg-indigo-50'
+            }`}
+            title="Microsoft Edge TTS — 무료, 빠름"
+          >
+            표준
+          </button>
+          <button
+            onClick={() => handleEngineChange('google')}
+            className={`px-2.5 py-1 rounded-lg text-[10px] font-semibold transition-all flex items-center gap-1 ${
+              engine === 'google'
+                ? 'bg-emerald-500 text-white shadow-sm'
+                : 'bg-white text-emerald-500 border border-emerald-200 hover:bg-emerald-50'
+            }`}
+            title="Google Cloud Neural2 — 가장 자연스러움"
+          >
+            <span>✨</span>
+            <span>고품질</span>
+          </button>
+        </div>
+      )}
 
       {/* 메인 컨트롤 */}
       <div className="flex items-center gap-2">
@@ -442,7 +478,7 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
             <span className="text-xs font-semibold text-indigo-700 truncate">
-              {selectedGender === 'female' ? '👩' : '👨'} {label}
+              {VOICE_OPTIONS[lang].find((v) => v.key === selectedVoice)?.gender === 'female' ? '👩' : '👨'} {label}
             </span>
             <div className="flex items-center gap-2">
               {loading && <span className="text-[10px] text-indigo-400">음성 생성중...</span>}

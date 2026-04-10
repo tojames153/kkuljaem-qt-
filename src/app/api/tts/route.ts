@@ -10,31 +10,51 @@ type VoiceId = 'female' | 'male';
 
 // ─────────────────────────────────────────────────────────
 // 음성 매핑: 엔진 × 언어 × 음성ID → 실제 음성 이름
+// 음성ID는 프론트엔드와 공유되는 논리 키
 // ─────────────────────────────────────────────────────────
 const VOICE_MAP: Record<'edge' | 'google', Record<Lang, Record<string, string>>> = {
   edge: {
     ko: {
-      female: 'ko-KR-SunHiNeural',    // 선희 — 따뜻하고 부드러움
-      male: 'ko-KR-InJoonNeural',     // 인준 — 차분하고 명료
-      // 호환
+      // 한국어 4종 (성별 × 2)
+      sunhi: 'ko-KR-SunHiNeural',     // 여성 — 선희, 따뜻하고 표준적
+      jimin: 'ko-KR-JiMinNeural',     // 여성 — 지민, 밝고 또렷함
+      injoon: 'ko-KR-InJoonNeural',   // 남성 — 인준, 차분하고 표준적
+      bongjin: 'ko-KR-BongJinNeural', // 남성 — 봉진, 따뜻하고 묵직함
+      // 호환 (구버전 voice='female'/'male'/'nova'/'onyx')
+      female: 'ko-KR-SunHiNeural',
+      male: 'ko-KR-InJoonNeural',
       nova: 'ko-KR-SunHiNeural',
       onyx: 'ko-KR-InJoonNeural',
     },
     en: {
-      female: 'en-US-JennyNeural',    // Jenny — 자연스러운 미국 영어
-      male: 'en-US-GuyNeural',        // Guy — 차분한 미국 영어
+      // 영어 4종
+      jenny: 'en-US-JennyNeural',     // 여성 — Jenny, 자연스럽고 친근
+      aria: 'en-US-AriaNeural',       // 여성 — Aria, 명료하고 차분
+      guy: 'en-US-GuyNeural',         // 남성 — Guy, 차분하고 명료
+      davis: 'en-US-DavisNeural',     // 남성 — Davis, 깊고 따뜻함
+      // 호환
+      female: 'en-US-JennyNeural',
+      male: 'en-US-GuyNeural',
       nova: 'en-US-JennyNeural',
       onyx: 'en-US-GuyNeural',
     },
   },
   google: {
     ko: {
-      female: 'ko-KR-Neural2-B',      // 따뜻한 여성 (Neural2)
-      male: 'ko-KR-Neural2-C',        // 차분한 남성 (Neural2)
+      sunhi: 'ko-KR-Neural2-B',
+      jimin: 'ko-KR-Neural2-A',
+      injoon: 'ko-KR-Neural2-C',
+      bongjin: 'ko-KR-Standard-D',
+      female: 'ko-KR-Neural2-B',
+      male: 'ko-KR-Neural2-C',
       nova: 'ko-KR-Neural2-A',
       onyx: 'ko-KR-Neural2-C',
     },
     en: {
+      jenny: 'en-US-Neural2-F',
+      aria: 'en-US-Neural2-G',
+      guy: 'en-US-Neural2-D',
+      davis: 'en-US-Neural2-J',
       female: 'en-US-Neural2-F',
       male: 'en-US-Neural2-D',
       nova: 'en-US-Neural2-G',
@@ -63,26 +83,47 @@ function escapeXml(s: string): string {
 }
 
 function buildSSMLBody(text: string, lang: Lang): string {
-  // 1. XML escape (반드시 먼저)
+  // 1. 공백 정리 + XML escape (반드시 먼저)
   let processed = escapeXml(text.replace(/\s+/g, ' ').trim());
 
   if (lang === 'ko') {
-    // 한국어 종결어미 ("~다.", "~요.", "~네.", "~까?", "~죠.") → 긴 호흡
+    // (a) 한국어 종결어미 (~다./요./네./까?/죠. 등) → 가장 긴 호흡 (문장 단락)
     processed = processed.replace(
-      /([다요네까죠라리야임]\.|[다요네까죠라리야임]\?|[다요네까죠라리야임]!)/g,
-      '$1<break time="500ms"/>'
+      /([다요네까죠라리야임니])([.!?])/g,
+      '$1$2<break time="600ms"/>'
     );
-    // 일반 마침표/물음표/느낌표 → 중간 호흡
-    processed = processed.replace(/([.!?])(?!<)/g, '$1<break time="350ms"/>');
-    // 콜론·세미콜론 → 중간 호흡
-    processed = processed.replace(/([:;])/g, '$1<break time="300ms"/>');
-    // 쉼표 → 짧은 호흡
-    processed = processed.replace(/,(?!<)/g, ',<break time="180ms"/>');
+    // (b) 일반 마침표/물음표/느낌표 → 중간 호흡
+    processed = processed.replace(/([.!?])(?!<)/g, '$1<break time="380ms"/>');
+    // (c) 콜론·세미콜론 → 중간 호흡 (성경 본문에서 자주 등장)
+    processed = processed.replace(/([:;])/g, '$1<break time="320ms"/>');
+    // (d) 쉼표 → 짧은 호흡
+    processed = processed.replace(/,(?!<)/g, ',<break time="200ms"/>');
+
+    // (e) 한국어 접속 부사 앞 짧은 단락 — 자연스러운 운율 형성
+    //     예: "그러나 ~", "그러므로 ~", "이는 ~"
+    processed = processed.replace(
+      /(^|\s)(그러나|그러므로|그러면|그런즉|그래서|그리고|또한|이는|보라|이에|이로써|그러나|그렇지만|그런데|그러나|그렇기에|그래도|만일|만약|그렇다면)([\s,])/g,
+      '$1<break time="220ms"/>$2$3'
+    );
+
+    // (f) 직접화법 도입어 ("이르시되", "말씀하시되", "가라사대" 등) 뒤에 짧은 호흡
+    processed = processed.replace(
+      /(이르시되|말씀하시되|말씀하시기를|말하기를|가라사대|이르되|대답하여|대답하되|이르시기를)(\s)/g,
+      '$1<break time="380ms"/>$2'
+    );
+
+    // (g) 인용/직접화법 따옴표 처리 — 따옴표 앞뒤로 짧은 호흡
+    processed = processed.replace(/(&quot;|&apos;|"|')/g, '<break time="150ms"/>$1');
   } else {
     // 영어: 문장 끝 호흡
-    processed = processed.replace(/([.!?])(?!<)/g, '$1<break time="400ms"/>');
-    processed = processed.replace(/([:;])/g, '$1<break time="280ms"/>');
-    processed = processed.replace(/,(?!<)/g, ',<break time="160ms"/>');
+    processed = processed.replace(/([.!?])(?!<)/g, '$1<break time="420ms"/>');
+    processed = processed.replace(/([:;])/g, '$1<break time="300ms"/>');
+    processed = processed.replace(/,(?!<)/g, ',<break time="170ms"/>');
+    // 영어 접속사 앞 짧은 호흡
+    processed = processed.replace(
+      /(^|\s)(But|However|Therefore|Moreover|Furthermore|Yet|For|Behold|And so)\s/g,
+      '$1<break time="200ms"/>$2 '
+    );
   }
 
   return processed;
@@ -99,8 +140,8 @@ async function synthesizeWithEdge(text: string, voiceName: string, lang: Lang): 
   const ssmlBody = buildSSMLBody(text, lang);
 
   const { audioStream } = tts.toStream(ssmlBody, {
-    rate: lang === 'ko' ? '-7%' : '-3%',  // 한국어는 약간 더 느리게 → 묵상 분위기
-    pitch: '-2%',
+    rate: lang === 'ko' ? '-10%' : '-4%',  // 한국어는 더 느리고 차분한 묵상 톤
+    pitch: lang === 'ko' ? '-3%' : '-2%',  // 살짝 낮은 음높이로 따뜻함 강조
   });
 
   const chunks: Buffer[] = [];
