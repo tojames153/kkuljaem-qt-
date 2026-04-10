@@ -1,21 +1,66 @@
 {
-  "name": "꿀잼QT - 매일 말씀 묵상",
+  "name": "꿀잼QT - 매일 달콤한 말씀묵상",
   "short_name": "꿀잼QT",
-  "description": "매일 5분, 달콤한 말씀 묵상",
+  "description": "어린이, 청소년, 청년, 장년이 함께하는 매일 말씀 묵상. 교회력에 따른 365일 묵상, 성경읽기, 찬양과 기도.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#FFFDF7",
-  "theme_color": "#F4B400",
+  "theme_color": "#F5A623",
   "orientation": "portrait",
+  "scope": "/",
+  "lang": "ko",
+  "categories": ["education", "lifestyle", "books"],
   "icons": [
+    {
+      "src": "/icons/icon-76.png",
+      "sizes": "76x76",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-120.png",
+      "sizes": "120x120",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-152.png",
+      "sizes": "152x152",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-167.png",
+      "sizes": "167x167",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-180.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-384.png",
+      "sizes": "384x384",
       "type": "image/png"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-1024.png",
+      "sizes": "1024x1024",
       "type": "image/png"
     }
   ]

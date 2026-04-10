@@ -12,6 +12,11 @@
 :root {
   --background: #FFFDF7;
   --foreground: #3D2E0A;
+  --font-scale: 1;
+}
+
+html {
+  font-size: calc(16px * var(--font-scale));
 }
 
 * {

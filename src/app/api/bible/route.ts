@@ -105,6 +105,20 @@ function parsePassage(passage: string) {
 
 const VALID_TRANSLATIONS = ['KRV', 'NIV', 'HKJV'];
 
+// 텍스트 정제: HTML 태그, 특수 기호, 불필요한 문자 제거
+function cleanBibleText(text: string): string {
+  return text
+    .replace(/<[^>]*>/g, '')           // HTML 태그 제거
+    .replace(/\[.*?\]/g, '')           // 대괄호 안 내용 제거 (각주 번호 등)
+    .replace(/\{.*?\}/g, '')           // 중괄호 안 내용 제거
+    .replace(/【.*?】/g, '')           // 겹낫표 안 내용 제거
+    .replace(/¶/g, '')                 // 문단 기호 제거
+    .replace(/†|‡|§|※|◆|◇|□|■|★|☆/g, '') // 특수 기호 제거
+    .replace(/\u00a0/g, ' ')           // non-breaking space → 일반 공백
+    .replace(/\s{2,}/g, ' ')           // 연속 공백 → 하나
+    .trim();
+}
+
 // getbible.net API에서 한글킹제임스 가져오기
 async function fetchFromGetBible(parsed: { bookNum: number; chapter: number; startVerse: number; endVerse: number }) {
   const res = await fetch(
@@ -121,7 +135,7 @@ async function fetchFromGetBible(parsed: { bookNum: number; chapter: number; sta
     ? allVerses
     : allVerses.filter((v) => v.verse >= parsed.startVerse && v.verse <= parsed.endVerse);
 
-  return filtered.map((v) => ({ verse: v.verse, text: v.text.replace(/^\s*¶\s*/, '').trim() }));
+  return filtered.map((v) => ({ verse: v.verse, text: cleanBibleText(v.text) }));
 }
 
 // bolls.life API에서 KRV/NIV 가져오기
@@ -139,7 +153,7 @@ async function fetchFromBolls(translation: string, parsed: { bookNum: number; ch
     ? allVerses
     : allVerses.filter((v) => v.verse >= parsed.startVerse && v.verse <= parsed.endVerse);
 
-  return filtered.map((v) => ({ verse: v.verse, text: v.text }));
+  return filtered.map((v) => ({ verse: v.verse, text: cleanBibleText(v.text) }));
 }
 
 export async function GET(request: NextRequest) {
@@ -160,9 +174,16 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const verses = translation === 'HKJV'
-      ? await fetchFromGetBible(parsed)
-      : await fetchFromBolls(translation, parsed);
+    let verses;
+    if (translation === 'HKJV') {
+      verses = await fetchFromGetBible(parsed);
+    } else if (translation === 'KRV') {
+      // 개역한글: bolls.life KRV
+      verses = await fetchFromBolls('KRV', parsed);
+    } else {
+      // NIV 등
+      verses = await fetchFromBolls(translation, parsed);
+    }
 
     if (!verses || verses.length === 0) {
       return NextResponse.json({ error: '성경 본문을 가져올 수 없습니다.' }, { status: 502 });

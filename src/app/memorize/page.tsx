@@ -34,7 +34,9 @@ export default function MemorizePage() {
   const [showHint, setShowHint] = useState(false);
   const [hintLevel, setHintLevel] = useState(1);
   const [fullVerseText, setFullVerseText] = useState('');
+  const [fullVerseTextEng, setFullVerseTextEng] = useState('');
   const [verseLoading, setVerseLoading] = useState(false);
+  const [showEnglish, setShowEnglish] = useState(false);
 
   useEffect(() => {
     const dev = getTodayDevotional();
@@ -60,12 +62,17 @@ export default function MemorizePage() {
     if (!ref) return;
 
     setVerseLoading(true);
-    fetch(`/api/bible?passage=${encodeURIComponent(ref)}&translation=KRV`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.verses && data.verses.length > 0) {
-          const text = data.verses.map((v: { verse: number; text: string }) => v.text).join(' ');
-          setFullVerseText(text);
+    // 한글 + 영어 동시 요청
+    Promise.all([
+      fetch(`/api/bible?passage=${encodeURIComponent(ref)}&translation=KRV`).then(r => r.json()),
+      fetch(`/api/bible?passage=${encodeURIComponent(ref)}&translation=NIV`).then(r => r.json()),
+    ])
+      .then(([krData, enData]) => {
+        if (krData.verses && krData.verses.length > 0) {
+          setFullVerseText(krData.verses.map((v: { verse: number; text: string }) => v.text).join(' '));
+        }
+        if (enData.verses && enData.verses.length > 0) {
+          setFullVerseTextEng(enData.verses.map((v: { verse: number; text: string }) => v.text).join(' '));
         }
       })
       .catch(() => {})
@@ -167,23 +174,55 @@ export default function MemorizePage() {
           </div>
         </div>
 
+        {/* 한글/영어 전환 탭 */}
+        {parsed && (
+          <div className="flex bg-cream rounded-xl p-1 animate-fade-in" style={{ animationDelay: '0.05s' }}>
+            <button
+              onClick={() => setShowEnglish(false)}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                !showEnglish ? 'bg-white text-brown shadow-sm' : 'text-stone-400'
+              }`}
+            >
+              🇰🇷 한글 암송
+            </button>
+            <button
+              onClick={() => setShowEnglish(true)}
+              className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                showEnglish ? 'bg-white text-brown shadow-sm' : 'text-stone-400'
+              }`}
+            >
+              🇺🇸 English
+            </button>
+          </div>
+        )}
+
         {/* 암송 카드 */}
         {parsed && (
           <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <div
               className="flip-card cursor-pointer"
               onClick={() => setFlipped(!flipped)}
-              style={{ minHeight: '240px' }}
+              style={{ minHeight: showEnglish ? '300px' : '240px' }}
             >
-              <div className={`flip-card-inner relative w-full ${flipped ? 'flipped' : ''}`} style={{ minHeight: '240px' }}>
+              <div className={`flip-card-inner relative w-full ${flipped ? 'flipped' : ''}`} style={{ minHeight: showEnglish ? '300px' : '240px' }}>
                 {/* 앞면 — 구절 주소 (맞춰보기) */}
-                <div className="flip-card-front absolute inset-0 bg-gradient-to-br from-amber-400 via-yellow-400 to-orange-300 rounded-3xl p-8 flex flex-col items-center justify-center text-white shadow-lg">
-                  <span className="text-sm font-medium opacity-80 mb-3">오늘의 암송 구절</span>
+                <div className={`flip-card-front absolute inset-0 rounded-3xl p-8 flex flex-col items-center justify-center text-white shadow-lg ${
+                  showEnglish
+                    ? 'bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500'
+                    : 'bg-gradient-to-br from-amber-400 via-yellow-400 to-orange-300'
+                }`}>
+                  <span className="text-sm font-medium opacity-80 mb-3">
+                    {showEnglish ? "Today's Memory Verse" : '오늘의 암송 구절'}
+                  </span>
                   <p className="text-xl font-extrabold text-center mb-2">{parsed.ref}</p>
-                  <p className="text-white/70 text-sm text-center mt-2">이 구절을 기억하시나요?</p>
-                  <span className="text-xs opacity-60 mt-4">탭하여 본문 확인</span>
+                  <p className="text-white/70 text-sm text-center mt-2">
+                    {showEnglish ? 'Can you recite this verse?' : '이 구절을 기억하시나요?'}
+                  </p>
+                  <span className="text-xs opacity-60 mt-4">
+                    {showEnglish ? 'Tap to reveal' : '탭하여 본문 확인'}
+                  </span>
                 </div>
-                {/* 뒷면 — 암송 본문 (성경 전문) */}
+                {/* 뒷면 — 암송 본문 */}
                 <div className="flip-card-back absolute inset-0 bg-white rounded-3xl p-6 flex flex-col items-center justify-center shadow-lg border-2 border-amber-200">
                   <span className="text-xs text-amber-600 font-semibold mb-3">{parsed.ref}</span>
                   {verseLoading ? (
@@ -191,12 +230,25 @@ export default function MemorizePage() {
                       <div className="w-4 h-4 border-2 border-amber-300 border-t-transparent rounded-full animate-spin" />
                       <span className="text-sm text-stone-400">본문 불러오는 중...</span>
                     </div>
+                  ) : showEnglish ? (
+                    <div className="space-y-3 w-full">
+                      <p className="text-base font-bold text-indigo-800 text-center leading-relaxed">
+                        {fullVerseTextEng || 'Loading...'}
+                      </p>
+                      <div className="border-t border-stone-100 pt-3">
+                        <p className="text-sm text-stone-500 text-center leading-relaxed">
+                          {verseText}
+                        </p>
+                      </div>
+                    </div>
                   ) : (
                     <p className="text-base font-bold text-brown text-center leading-relaxed">
                       {verseText}
                     </p>
                   )}
-                  <span className="text-xs text-stone-400 mt-4">탭하여 다시 도전</span>
+                  <span className="text-xs text-stone-400 mt-4">
+                    {showEnglish ? 'Tap to try again' : '탭하여 다시 도전'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -236,10 +288,17 @@ export default function MemorizePage() {
                     </button>
                   ))}
                 </div>
-                <p className="text-stone-500 text-xs mb-3 text-center">빈칸을 채워보세요</p>
-                <p className="text-brown font-semibold text-base leading-relaxed text-center">
-                  {getHintText(verseText)}
+                <p className="text-stone-500 text-xs mb-3 text-center">
+                  {showEnglish ? 'Fill in the blanks' : '빈칸을 채워보세요'}
                 </p>
+                <p className="text-brown font-semibold text-base leading-relaxed text-center">
+                  {showEnglish ? getHintText(fullVerseTextEng || '') : getHintText(verseText)}
+                </p>
+                {showEnglish && verseText && (
+                  <p className="text-stone-400 text-sm text-center mt-2 leading-relaxed">
+                    {verseText}
+                  </p>
+                )}
                 <p className="text-xs text-amber-600 text-center mt-3">— {parsed.ref}</p>
               </div>
             )}

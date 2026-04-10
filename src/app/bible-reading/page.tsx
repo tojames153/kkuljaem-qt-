@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import AppShell from '@/components/AppShell';
+import BibleAudioPlayer from '@/components/BibleAudioPlayer';
 import { getTodayReading, getReadingForDay, DailyReading } from '@/lib/bible-reading-plan';
 import { useAuth } from '@/lib/auth-context';
 
@@ -10,6 +11,7 @@ interface ReadingRecord {
   date: string;
   ot: boolean;
   nt: boolean;
+  ps?: boolean;
 }
 
 interface BibleVerse {
@@ -75,13 +77,14 @@ export default function BibleReadingPage() {
   const [records, setRecords] = useState<ReadingRecord[]>([]);
   const [otChecked, setOtChecked] = useState(false);
   const [ntChecked, setNtChecked] = useState(false);
+  const [psChecked, setPsChecked] = useState(false);
   const [streak, setStreak] = useState(0);
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const { user } = useAuth();
 
   // 성경 읽기 상태
-  const [openSection, setOpenSection] = useState<'ot' | 'nt' | null>(null);
+  const [openSection, setOpenSection] = useState<'ot' | 'nt' | 'ps' | null>(null);
   const [translation, setTranslation] = useState<'KRV' | 'HKJV' | 'NIV'>('KRV');
   const [bibleData, setBibleData] = useState<ChapterData[]>([]);
   const [bibleLoading, setBibleLoading] = useState(false);
@@ -100,6 +103,7 @@ export default function BibleReadingPage() {
     if (todayRecord) {
       setOtChecked(todayRecord.ot);
       setNtChecked(todayRecord.nt);
+      setPsChecked(todayRecord.ps || false);
     }
 
     // streak 계산
@@ -122,17 +126,19 @@ export default function BibleReadingPage() {
     setStreak(count);
   }, []);
 
-  const handleCheck = (type: 'ot' | 'nt') => {
+  const handleCheck = (type: 'ot' | 'nt' | 'ps') => {
     if (!todayReading) return;
     const today = getLocalDateStr();
     const newOt = type === 'ot' ? !otChecked : otChecked;
     const newNt = type === 'nt' ? !ntChecked : ntChecked;
+    const newPs = type === 'ps' ? !psChecked : psChecked;
 
     if (type === 'ot') setOtChecked(newOt);
     if (type === 'nt') setNtChecked(newNt);
+    if (type === 'ps') setPsChecked(newPs);
 
     const updated = records.filter((r) => r.date !== today);
-    updated.push({ day: todayReading.day, date: today, ot: newOt, nt: newNt });
+    updated.push({ day: todayReading.day, date: today, ot: newOt, nt: newNt, ps: newPs });
     setRecords(updated);
     saveRecords(updated);
 
@@ -185,7 +191,13 @@ export default function BibleReadingPage() {
   }, []);
 
   // 섹션 열기/닫기
-  const handleOpenSection = (section: 'ot' | 'nt') => {
+  const getReadingForSection = (section: 'ot' | 'nt' | 'ps'): string => {
+    if (!todayReading) return '';
+    if (section === 'ps') return (todayReading as unknown as { ps?: string }).ps || '';
+    return section === 'ot' ? todayReading.ot : todayReading.nt;
+  };
+
+  const handleOpenSection = (section: 'ot' | 'nt' | 'ps') => {
     if (openSection === section) {
       setOpenSection(null);
       setBibleData([]);
@@ -193,8 +205,8 @@ export default function BibleReadingPage() {
     }
     setOpenSection(section);
     if (todayReading) {
-      const reading = section === 'ot' ? todayReading.ot : todayReading.nt;
-      fetchBibleText(reading, translation);
+      const reading = getReadingForSection(section);
+      if (reading) fetchBibleText(reading, translation);
     }
   };
 
@@ -202,8 +214,8 @@ export default function BibleReadingPage() {
   const handleTranslationChange = (trans: 'KRV' | 'HKJV' | 'NIV') => {
     setTranslation(trans);
     if (openSection && todayReading) {
-      const reading = openSection === 'ot' ? todayReading.ot : todayReading.nt;
-      fetchBibleText(reading, trans);
+      const reading = getReadingForSection(openSection);
+      if (reading) fetchBibleText(reading, trans);
     }
   };
 
@@ -262,8 +274,8 @@ export default function BibleReadingPage() {
 
   const translationTabs: [string, string][] = [
     ['KRV', '개역한글'],
-    ['HKJV', '한글KJV'],
-    ['NIV', 'NIV'],
+    ['HKJV', '한글킹제임스'],
+    ['NIV', 'NIV(영어)'],
   ];
 
   return (
@@ -352,7 +364,7 @@ export default function BibleReadingPage() {
             </div>
 
             {/* 신약 */}
-            <div>
+            <div className="mb-3">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleCheck('nt')}
@@ -390,6 +402,47 @@ export default function BibleReadingPage() {
               </div>
             </div>
 
+            {/* 시편/잠언 */}
+            {'ps' in todayReading && (todayReading as unknown as { ps: string }).ps && (
+              <div className="mb-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleCheck('ps')}
+                    className={`flex-1 flex items-center gap-4 p-4 rounded-xl transition-all text-left ${
+                      psChecked
+                        ? 'bg-purple-50 border-2 border-purple-200'
+                        : 'bg-stone-50 border-2 border-transparent hover:border-stone-200'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                      psChecked ? 'bg-purple-500 text-white' : 'bg-white border-2 border-stone-200'
+                    }`}>
+                      {psChecked ? '✓' : ''}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs text-stone-400 font-medium">시편/잠언</p>
+                      <p className={`font-bold ${psChecked ? 'text-purple-700' : 'text-brown'}`}>
+                        {(todayReading as unknown as { ps: string }).ps}
+                      </p>
+                    </div>
+                  </button>
+                  <button
+                    onClick={() => handleOpenSection('ps')}
+                    className={`flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
+                      openSection === 'ps'
+                        ? 'bg-purple-500 text-white'
+                        : 'bg-purple-50 text-purple-600 hover:bg-purple-100'
+                    }`}
+                    title="성경 읽기"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* 성경 본문 표시 영역 */}
             {openSection && (
               <div className="mt-4 animate-slide-up">
@@ -413,7 +466,7 @@ export default function BibleReadingPage() {
                 {/* 본문 헤더 */}
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="font-bold text-brown text-sm">
-                    {openSection === 'ot' ? todayReading.ot : todayReading.nt}
+                    {openSection ? getReadingForSection(openSection) : ''}
                   </h4>
                   <button
                     onClick={() => { setOpenSection(null); setBibleData([]); }}
@@ -440,7 +493,7 @@ export default function BibleReadingPage() {
                     <button
                       onClick={() => {
                         if (todayReading) {
-                          const reading = openSection === 'ot' ? todayReading.ot : todayReading.nt;
+                          const reading = openSection ? getReadingForSection(openSection) : '';
                           fetchBibleText(reading, translation);
                         }
                       }}
@@ -448,6 +501,16 @@ export default function BibleReadingPage() {
                     >
                       다시 시도
                     </button>
+                  </div>
+                )}
+
+                {/* 음성 듣기 (성경읽기 모드) */}
+                {!bibleLoading && !bibleError && bibleData.length > 0 && (
+                  <div className="mb-3">
+                    <BibleAudioPlayer
+                      text={bibleData.map(ch => ch.verses.map(v => v.text).join(' ')).join(' ')}
+                      label={openSection ? getReadingForSection(openSection) + ' 음성으로 듣기' : '성경 듣기'}
+                    />
                   </div>
                 )}
 

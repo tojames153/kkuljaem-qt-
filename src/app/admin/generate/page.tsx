@@ -215,7 +215,7 @@ export default function GeneratePage() {
       {/* 헤더 */}
       <header className="bg-gradient-to-r from-amber-500 to-orange-400 text-white px-6 py-5">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-2xl font-extrabold">🍯 꿀잼QT 묵상 데이터 생성기</h1>
+          <h1 className="text-2xl font-extrabold">🍯 kkuljaem-qt 묵상 데이터 생성기</h1>
           <p className="text-white/80 text-sm mt-1">AI가 교회력 기반 365일 묵상 콘텐츠를 자동 생성합니다</p>
         </div>
       </header>

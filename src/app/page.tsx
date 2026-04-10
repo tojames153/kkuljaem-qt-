@@ -122,9 +122,10 @@ export default function HomePage() {
         {/* 오늘의 찬양 — 연령에 맞는 곡 */}
         {devotional?.ccm && (() => {
           const ageCcm = getAgeCcm(devotional);
-          const ageKey = user?.age_group === 'children' ? 'children' : user?.age_group === 'young_adult' ? 'young_adult' : 'youth';
+          const ageKey = user?.age_group === 'children' ? 'children' : user?.age_group === 'young_adult' ? 'young_adult' : user?.age_group === 'senior' ? 'senior' : 'youth';
           const song = ageCcm[ageKey];
-          const ageLabel = ageKey === 'children' ? '어린이' : ageKey === 'young_adult' ? '청년' : '청소년';
+          const ageLabelMap: Record<string, string> = { children: '어린이찬송', youth: 'CCM', young_adult: '찬양', senior: '찬송가' };
+          const ageLabel = ageLabelMap[ageKey] || 'CCM';
           return (
             <a
               href={`https://www.youtube.com/results?search_query=${encodeURIComponent(song + ' 찬양')}`}
@@ -183,6 +184,20 @@ export default function HomePage() {
             <span className="text-[11px] font-medium text-stone-600">공동체</span>
           </Link>
         </div>
+
+        {/* 지난 묵상 바로가기 */}
+        <Link href="/history" className="block animate-fade-in" style={{ animationDelay: '0.6s' }}>
+          <div className="bg-white rounded-2xl p-4 shadow-sm border border-amber-50 flex items-center gap-3 hover:shadow-md transition-shadow">
+            <span className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center text-lg">📅</span>
+            <div className="flex-1">
+              <p className="font-semibold text-brown text-sm">지난 묵상 다시보기</p>
+              <p className="text-xs text-stone-400">과거 큐티를 달력에서 찾아 읽어보세요</p>
+            </div>
+            <svg className="w-5 h-5 text-stone-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" />
+            </svg>
+          </div>
+        </Link>
       </div>
     </AppShell>
   );

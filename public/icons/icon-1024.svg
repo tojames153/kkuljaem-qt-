@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <!-- 배경 그라데이션: 따뜻한 꿀색 -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFB845"/>
+      <stop offset="50%" stop-color="#F5A623"/>
+      <stop offset="100%" stop-color="#E8941A"/>
+    </linearGradient>
+    <!-- 꿀방울 광택 -->
+    <radialGradient id="honeyShine" cx="0.35" cy="0.3" r="0.65">
+      <stop offset="0%" stop-color="#FFD980" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#F5A623" stop-opacity="0"/>
+    </radialGradient>
+    <!-- 성경책 그라데이션 -->
+    <linearGradient id="bookGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#FFF5E0"/>
+    </linearGradient>
+    <!-- 십자가 광택 -->
+    <linearGradient id="crossGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#FFE8B0"/>
+      <stop offset="100%" stop-color="#FFCC55"/>
+    </linearGradient>
+    <!-- 그림자 -->
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#00000025"/>
+    </filter>
+    <filter id="innerGlow">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="12" result="blur"/>
+      <feOffset dx="0" dy="0"/>
+      <feComposite in2="SourceAlpha" operator="arithmetic" k2="-1" k3="1"/>
+      <feFlood flood-color="#FFE8B0" flood-opacity="0.3"/>
+      <feComposite in2="blur" operator="in"/>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- 배경: 둥근 사각형 -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bgGrad)"/>
+
+  <!-- 광택 오버레이 -->
+  <rect width="1024" height="1024" rx="224" fill="url(#honeyShine)"/>
+
+  <!-- 꿀방울 장식 (왼쪽 위) -->
+  <circle cx="210" cy="200" r="35" fill="#FFD06B" opacity="0.4"/>
+  <circle cx="160" cy="280" r="20" fill="#FFD06B" opacity="0.3"/>
+
+  <!-- 꿀방울 장식 (오른쪽 아래) -->
+  <circle cx="820" cy="750" r="28" fill="#E88C15" opacity="0.3"/>
+  <circle cx="870" cy="680" r="18" fill="#E88C15" opacity="0.2"/>
+
+  <!-- 메인 심볼: 펼쳐진 성경책 -->
+  <g transform="translate(512, 390)" filter="url(#shadow)">
+    <!-- 왼쪽 페이지 -->
+    <path d="M-10,-120 Q-10,-140 -30,-140 L-180,-130 Q-200,-128 -200,-108 L-200,80 Q-200,100 -180,100 L-30,90 Q-10,88 -10,70 Z"
+          fill="url(#bookGrad)" stroke="#E8C873" stroke-width="3"/>
+    <!-- 오른쪽 페이지 -->
+    <path d="M10,-120 Q10,-140 30,-140 L180,-130 Q200,-128 200,-108 L200,80 Q200,100 180,100 L30,90 Q10,88 10,70 Z"
+          fill="url(#bookGrad)" stroke="#E8C873" stroke-width="3"/>
+    <!-- 책등 -->
+    <path d="M-10,-120 L-10,70 M10,-120 L10,70" stroke="#D4A94B" stroke-width="2.5" opacity="0.5"/>
+
+    <!-- 왼쪽 페이지 텍스트 라인 -->
+    <line x1="-170" y1="-90" x2="-40" y2="-85" stroke="#E8C873" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+    <line x1="-170" y1="-60" x2="-40" y2="-55" stroke="#E8C873" stroke-width="3" stroke-linecap="round" opacity="0.4"/>
+    <line x1="-170" y1="-30" x2="-40" y2="-25" stroke="#E8C873" stroke-width="3" stroke-linecap="round" opacity="0.35"/>
+    <line x1="-170" y1="0" x2="-40" y2="5" stroke="#E8C873" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
+    <line x1="-170" y1="30" x2="-100" y2="33" stroke="#E8C873" stroke-width="3" stroke-linecap="round" opacity="0.25"/>
+
+    <!-- 오른쪽 페이지 텍스트 라인 -->
+    <line x1="40" y1="-85" x2="170" y2="-90" stroke="#E8C873" stroke-width="3" stroke-linecap="round" opacity="0.5"/>
+    <line x1="40" y1="-55" x2="170" y2="-60" stroke="#E8C873" stroke-width="3" stroke-linecap="round" opacity="0.4"/>
+    <line x1="40" y1="-25" x2="170" y2="-30" stroke="#E8C873" stroke-width="3" stroke-linecap="round" opacity="0.35"/>
+    <line x1="40" y1="5" x2="170" y2="0" stroke="#E8C873" stroke-width="3" stroke-linecap="round" opacity="0.3"/>
+    <line x1="40" y1="33" x2="110" y2="30" stroke="#E8C873" stroke-width="3" stroke-linecap="round" opacity="0.25"/>
+  </g>
+
+  <!-- 십자가 (성경 위에 떠있는 느낌) -->
+  <g transform="translate(512, 330)" filter="url(#shadow)">
+    <!-- 십자가 본체 -->
+    <rect x="-18" y="-90" width="36" height="130" rx="8" fill="url(#crossGrad)" stroke="#D4A030" stroke-width="2"/>
+    <rect x="-50" y="-55" width="100" height="32" rx="8" fill="url(#crossGrad)" stroke="#D4A030" stroke-width="2"/>
+    <!-- 십자가 하이라이트 -->
+    <rect x="-10" y="-82" width="8" height="114" rx="4" fill="white" opacity="0.25"/>
+    <rect x="-42" y="-47" width="84" height="8" rx="4" fill="white" opacity="0.2"/>
+  </g>
+
+  <!-- 꿀방울 아이콘 (왼쪽 하단) -->
+  <g transform="translate(330, 620)">
+    <path d="M0,-30 Q20,-50 20,-25 Q20,0 0,15 Q-20,0 -20,-25 Q-20,-50 0,-30Z"
+          fill="#FFD06B" stroke="#E8A820" stroke-width="2" opacity="0.8" transform="scale(1.8)"/>
+    <ellipse cx="6" cy="-25" rx="5" ry="8" fill="white" opacity="0.3" transform="scale(1.8)"/>
+  </g>
+
+  <!-- 하트 아이콘 (오른쪽 하단) -->
+  <g transform="translate(694, 618)">
+    <path d="M0,15 Q-25,-5 -22,-22 Q-18,-40 0,-28 Q18,-40 22,-22 Q25,-5 0,15Z"
+          fill="#FF8A8A" stroke="#E06060" stroke-width="2" opacity="0.7" transform="scale(1.8)"/>
+    <ellipse cx="-8" cy="-22" rx="4" ry="6" fill="white" opacity="0.3" transform="scale(1.8)"/>
+  </g>
+
+  <!-- 앱 이름: 꿀잼QT -->
+  <g filter="url(#shadow)">
+    <text x="512" y="780" font-size="120" text-anchor="middle" fill="white" font-weight="900"
+          font-family="'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif"
+          letter-spacing="6">꿀잼QT</text>
+  </g>
+
+  <!-- 서브타이틀 -->
+  <text x="512" y="840" font-size="42" text-anchor="middle" fill="white" font-weight="600" opacity="0.85"
+        font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
+        letter-spacing="8">매일 달콤한 말씀묵상</text>
+
+  <!-- 하단 장식 라인 -->
+  <line x1="350" y1="870" x2="674" y2="870" stroke="white" stroke-width="2" opacity="0.3" stroke-linecap="round"/>
+</svg>

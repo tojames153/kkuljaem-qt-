@@ -1,26 +1,44 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import AppShell from '@/components/AppShell';
 import DevotionalCard from '@/components/DevotionalCard';
-import { getTodayDevotional } from '@/lib/sample-devotional';
+import { getTodayDevotional, getDevotionalForDay } from '@/lib/sample-devotional';
 import { Devotional, AgeGroup } from '@/types';
 import { useAuth } from '@/lib/auth-context';
 import { getExtendedAgeContent } from '@/lib/age-devotion-helper';
+import BgMusicPlayer from '@/components/BgMusicPlayer';
 
-export default function DevotionalPage() {
+function DevotionalContent() {
+  const searchParams = useSearchParams();
   const [devotional, setDevotional] = useState<Devotional | null>(null);
-  const [ageGroup, setAgeGroup] = useState<AgeGroup>('youth');
-  const [showAgeContent, setShowAgeContent] = useState(false);
   const { user } = useAuth();
+  const [ageGroup, setAgeGroup] = useState<AgeGroup>('youth');
+  const [ageInitialized, setAgeInitialized] = useState(false);
+  const [showAgeContent, setShowAgeContent] = useState(true);
+
+  // user가 로드되면 연령대 설정 (최초 1회)
+  useEffect(() => {
+    if (user?.age_group && !ageInitialized) {
+      // teacher/admin은 young_adult로 매핑, 나머지는 그대로
+      const mappedAge = ['teacher', 'admin'].includes(user.age_group)
+        ? 'young_adult' as AgeGroup
+        : user.age_group;
+      setAgeGroup(mappedAge);
+      setAgeInitialized(true);
+    }
+  }, [user, ageInitialized]);
 
   useEffect(() => {
-    setDevotional(getTodayDevotional());
-
-    // 사용자 연령대 자동 설정
-    if (user?.age_group && user.age_group !== 'teacher' && user.age_group !== 'admin') {
-      setAgeGroup(user.age_group);
+    const dayParam = searchParams.get('day');
+    if (dayParam) {
+      const dayNum = parseInt(dayParam, 10);
+      const dev = getDevotionalForDay(dayNum);
+      setDevotional(dev || getTodayDevotional());
+    } else {
+      setDevotional(getTodayDevotional());
     }
 
     // 연속 묵상 streak 업데이트
@@ -40,20 +58,18 @@ export default function DevotionalPage() {
     } catch {
       localStorage.setItem('kkuljaem-streak', JSON.stringify({ count: 1, lastDate: today }));
     }
-  }, [user]);
+  }, [user, searchParams]);
 
   if (!devotional) {
     return (
-      <AppShell>
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-pulse text-amber-400">
-            <svg className="w-12 h-12 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-            </svg>
-          </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-pulse text-amber-400">
+          <svg className="w-12 h-12 animate-spin" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+          </svg>
         </div>
-      </AppShell>
+      </div>
     );
   }
 
@@ -61,24 +77,30 @@ export default function DevotionalPage() {
     children: '어린이',
     youth: '청소년',
     young_adult: '청년',
+    senior: '장년',
   };
 
-  const validAgeGroup = ageGroup as 'children' | 'youth' | 'young_adult';
+  const validAgeGroup = ageGroup as 'children' | 'youth' | 'young_adult' | 'senior';
   const extendedContent = getExtendedAgeContent(devotional, validAgeGroup);
 
   return (
-    <AppShell>
+    <>
+      {/* 묵상 배경음악 */}
+      <div className="mb-5">
+        <BgMusicPlayer />
+      </div>
+
       <DevotionalCard devotional={devotional} />
 
-      {/* 연령별 콘텐츠 */}
+      {/* 연령별 묵상 도움 - 사용자 연령에 맞게 자동 표시 */}
       <div className="mt-5">
         <button
           onClick={() => setShowAgeContent(!showAgeContent)}
           className="w-full bg-white rounded-2xl p-4 shadow-sm border border-amber-50 flex items-center justify-between"
         >
           <div className="flex items-center gap-2">
-            <span className="text-lg">👥</span>
-            <span className="font-semibold text-brown text-sm">연령별 묵상 도움</span>
+            <span className="text-lg">{ageLabels[ageGroup] === '어린이' ? '🌱' : ageLabels[ageGroup] === '청소년' ? '🌿' : ageLabels[ageGroup] === '청년' ? '🌳' : '🌾'}</span>
+            <span className="font-semibold text-brown text-sm">{ageLabels[ageGroup]} 묵상 도움</span>
           </div>
           <svg
             className={`w-5 h-5 text-stone-400 transition-transform ${showAgeContent ? 'rotate-180' : ''}`}
@@ -90,22 +112,28 @@ export default function DevotionalPage() {
 
         {showAgeContent && (
           <div className="mt-3 space-y-3 animate-slide-up">
-            {/* 연령 그룹 선택 탭 */}
-            <div className="flex gap-2">
-              {(['children', 'youth', 'young_adult'] as const).map((group) => (
-                <button
-                  key={group}
-                  onClick={() => setAgeGroup(group)}
-                  className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
-                    ageGroup === group
-                      ? 'btn-honey shadow-sm'
-                      : 'bg-white text-stone-500 border border-amber-100'
-                  }`}
-                >
-                  {ageLabels[group]}
-                </button>
-              ))}
-            </div>
+            {/* 다른 연령 보기 (접힌 상태) */}
+            <details className="group">
+              <summary className="text-xs text-stone-400 cursor-pointer hover:text-stone-600 mb-2 list-none flex items-center gap-1">
+                <svg className="w-3 h-3 transition-transform group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5" /></svg>
+                다른 연령대 보기
+              </summary>
+              <div className="flex gap-2 mb-3">
+                {(['children', 'youth', 'young_adult', 'senior'] as const).map((group) => (
+                  <button
+                    key={group}
+                    onClick={() => setAgeGroup(group)}
+                    className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
+                      ageGroup === group
+                        ? 'btn-honey shadow-sm'
+                        : 'bg-white text-stone-500 border border-amber-100'
+                    }`}
+                  >
+                    {ageLabels[group]}
+                  </button>
+                ))}
+              </div>
+            </details>
 
             {/* 묵상 가이드 */}
             <div className="bg-cream rounded-2xl p-5 space-y-4">
@@ -155,6 +183,25 @@ export default function DevotionalPage() {
           ✍️ 묵상 기록하기
         </Link>
       </div>
+    </>
+  );
+}
+
+export default function DevotionalPage() {
+  return (
+    <AppShell>
+      <Suspense fallback={
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-pulse text-amber-400">
+            <svg className="w-12 h-12 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+          </div>
+        </div>
+      }>
+        <DevotionalContent />
+      </Suspense>
     </AppShell>
   );
 }

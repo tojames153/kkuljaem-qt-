@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="500" viewBox="0 0 1024 500">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FFB845"/>
+      <stop offset="50%" stop-color="#F5A623"/>
+      <stop offset="100%" stop-color="#E8941A"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.3" cy="0.4" r="0.7">
+      <stop offset="0%" stop-color="#FFD980" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#F5A623" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="3" stdDeviation="6" flood-color="#00000030"/>
+    </filter>
+  </defs>
+
+  <!-- 배경 -->
+  <rect width="1024" height="500" fill="url(#bg)"/>
+  <rect width="1024" height="500" fill="url(#glow)"/>
+
+  <!-- 장식 원들 -->
+  <circle cx="80" cy="80" r="40" fill="#FFD06B" opacity="0.25"/>
+  <circle cx="950" cy="420" r="55" fill="#E88C15" opacity="0.2"/>
+  <circle cx="180" cy="430" r="25" fill="#FFD06B" opacity="0.2"/>
+  <circle cx="900" cy="100" r="30" fill="#FFD06B" opacity="0.15"/>
+
+  <!-- 왼쪽: 아이콘 영역 -->
+  <g transform="translate(200, 250)" filter="url(#shadow)">
+    <!-- 둥근 사각형 배경 -->
+    <rect x="-100" y="-100" width="200" height="200" rx="44" fill="#F5A623" stroke="white" stroke-width="4" stroke-opacity="0.5"/>
+
+    <!-- 성경책 -->
+    <g transform="translate(0, -15) scale(0.7)">
+      <path d="M-10,-120 Q-10,-140 -30,-140 L-150,-132 Q-165,-130 -165,-112 L-165,60 Q-165,78 -150,78 L-30,70 Q-10,68 -10,52 Z" fill="white" stroke="#E8C873" stroke-width="2.5"/>
+      <path d="M10,-120 Q10,-140 30,-140 L150,-132 Q165,-130 165,-112 L165,60 Q165,78 150,78 L30,70 Q10,68 10,52 Z" fill="white" stroke="#E8C873" stroke-width="2.5"/>
+      <line x1="-135" y1="-95" x2="-35" y2="-90" stroke="#E8C873" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
+      <line x1="-135" y1="-65" x2="-35" y2="-60" stroke="#E8C873" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+      <line x1="-135" y1="-35" x2="-35" y2="-30" stroke="#E8C873" stroke-width="2.5" stroke-linecap="round" opacity="0.3"/>
+      <line x1="35" y1="-90" x2="135" y2="-95" stroke="#E8C873" stroke-width="2.5" stroke-linecap="round" opacity="0.4"/>
+      <line x1="35" y1="-60" x2="135" y2="-65" stroke="#E8C873" stroke-width="2.5" stroke-linecap="round" opacity="0.35"/>
+      <line x1="35" y1="-30" x2="135" y2="-35" stroke="#E8C873" stroke-width="2.5" stroke-linecap="round" opacity="0.3"/>
+    </g>
+
+    <!-- 십자가 -->
+    <g transform="translate(0, -55) scale(0.55)">
+      <rect x="-16" y="-80" width="32" height="115" rx="7" fill="#FFD06B" stroke="#D4A030" stroke-width="2"/>
+      <rect x="-44" y="-48" width="88" height="28" rx="7" fill="#FFD06B" stroke="#D4A030" stroke-width="2"/>
+    </g>
+
+    <!-- 꿀방울 -->
+    <g transform="translate(-70, 55) scale(1.1)">
+      <path d="M0,-20 Q14,-35 14,-17 Q14,0 0,10 Q-14,0 -14,-17 Q-14,-35 0,-20Z" fill="#FFD06B" stroke="#E8A820" stroke-width="1.5" opacity="0.8"/>
+    </g>
+    <!-- 하트 -->
+    <g transform="translate(70, 53) scale(1.1)">
+      <path d="M0,10 Q-17,-3 -15,-15 Q-12,-27 0,-19 Q12,-27 15,-15 Q17,-3 0,10Z" fill="#FF8A8A" stroke="#E06060" stroke-width="1.5" opacity="0.7"/>
+    </g>
+  </g>
+
+  <!-- 오른쪽: 텍스트 -->
+  <g>
+    <!-- 앱 이름 -->
+    <text x="580" y="190" font-size="88" fill="white" font-weight="900"
+          font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
+          letter-spacing="4" filter="url(#shadow)">꿀잼QT</text>
+
+    <!-- 슬로건 -->
+    <text x="583" y="255" font-size="34" fill="white" font-weight="600" opacity="0.9"
+          font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif"
+          letter-spacing="3">매일 달콤한 말씀묵상</text>
+
+    <!-- 구분선 -->
+    <line x1="583" y1="280" x2="850" y2="280" stroke="white" stroke-width="1.5" opacity="0.3"/>
+
+    <!-- 기능 태그들 -->
+    <g font-family="'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif" font-size="20" font-weight="600">
+      <rect x="583" y="300" width="120" height="32" rx="16" fill="white" fill-opacity="0.2"/>
+      <text x="643" y="322" fill="white" text-anchor="middle" opacity="0.9">365일 묵상</text>
+
+      <rect x="715" y="300" width="120" height="32" rx="16" fill="white" fill-opacity="0.2"/>
+      <text x="775" y="322" fill="white" text-anchor="middle" opacity="0.9">성경읽기</text>
+
+      <rect x="583" y="345" width="100" height="32" rx="16" fill="white" fill-opacity="0.2"/>
+      <text x="633" y="367" fill="white" text-anchor="middle" opacity="0.9">음성듣기</text>
+
+      <rect x="695" y="345" width="120" height="32" rx="16" fill="white" fill-opacity="0.2"/>
+      <text x="755" y="367" fill="white" text-anchor="middle" opacity="0.9">교회력 기반</text>
+    </g>
+  </g>
+</svg>
