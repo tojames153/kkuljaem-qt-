@@ -6,22 +6,21 @@ export const maxDuration = 60;
 
 type Lang = 'ko' | 'en';
 type Engine = 'edge' | 'google' | 'auto';
-type VoiceId = 'female' | 'male';
 
 // ─────────────────────────────────────────────────────────
 // 음성 매핑: 엔진 × 언어 × 음성ID → 실제 음성 이름
-// 음성ID는 프론트엔드와 공유되는 논리 키
 //
 // ⚠️ Edge TTS 무료 엔드포인트(speech.platform.bing.com)는 Azure 전체 음성 중
-// 일부만 노출함. 한국어는 단 3개 (SunHi, InJoon, HyunsuMultilingual).
-// 영어는 17개. 여기에 등록된 voice ID는 모두 실제 사용 가능한 것으로 검증됨.
+// 일부만 노출함. 실제 라이브 엔드포인트에서 검증한 결과:
+//   · 한국어 3개: SunHi, InJoon, HyunsuMultilingual
+//   · 영어 17개 (그 중 4개를 채택)
 // ─────────────────────────────────────────────────────────
 const VOICE_MAP: Record<'edge' | 'google', Record<Lang, Record<string, string>>> = {
   edge: {
     ko: {
       sunhi: 'ko-KR-SunHiNeural',                  // 여성 — 표준
       injoon: 'ko-KR-InJoonNeural',                // 남성 — 표준
-      hyunsu: 'ko-KR-HyunsuMultilingualNeural',    // 남성 — 멀티링구얼 신형, 가장 자연스러움
+      hyunsu: 'ko-KR-HyunsuMultilingualNeural',    // 남성 — 멀티링구얼 신형
       // 호환 (구버전 voice='female'/'male')
       female: 'ko-KR-SunHiNeural',
       male: 'ko-KR-InJoonNeural',
@@ -29,11 +28,10 @@ const VOICE_MAP: Record<'edge' | 'google', Record<Lang, Record<string, string>>>
       onyx: 'ko-KR-InJoonNeural',
     },
     en: {
-      jenny: 'en-US-JennyNeural',                  // 여성 — 친근
-      aria: 'en-US-AriaNeural',                    // 여성 — 명료
-      guy: 'en-US-GuyNeural',                      // 남성 — 차분
-      andrew: 'en-US-AndrewMultilingualNeural',    // 남성 — 멀티링구얼 신형, 부드러움
-      // 호환
+      jenny: 'en-US-JennyNeural',
+      aria: 'en-US-AriaNeural',
+      guy: 'en-US-GuyNeural',
+      andrew: 'en-US-AndrewMultilingualNeural',
       female: 'en-US-JennyNeural',
       male: 'en-US-GuyNeural',
       nova: 'en-US-JennyNeural',
@@ -69,81 +67,45 @@ function pickVoice(engine: 'edge' | 'google', lang: Lang, voice: string): string
 }
 
 // ─────────────────────────────────────────────────────────
-// 텍스트 → SSML 변환
-// 마침표·물음표·느낌표·콜론·세미콜론 뒤에 자연스러운 호흡을 추가하고
-// 한국어 종결어미("~다.", "~요.")에 더 긴 호흡을, 쉼표에 짧은 호흡을 추가.
+// 텍스트 전처리
+//
+// ⚠️ 중대한 발견 (라이브 테스트로 검증):
+// Edge TTS 무료 엔드포인트는 인라인 SSML 태그를 일체 거부한다.
+// <break>, <emphasis>, <prosody>, <p>, <s> 등을 포함하면 silent하게
+// 0 bytes 응답을 반환함. 따라서 본문은 *순수 평문* 으로 보내야 함.
+//
+// 자연스러운 호흡은:
+//   1. punctuation (마침표/쉼표/물음표) — Microsoft TTS가 자동으로 호흡 생성
+//   2. msedge-tts ProsodyOptions (rate/pitch) — 라이브러리가 SSML 래퍼에서 처리
+// 두 가지로만 만들어야 한다.
+//
+// XML escape 필수: `&`, `<`, `>` 가 본문에 포함되면 라이브러리의 SSML 템플릿
+// 안에서 XML이 깨진다. (`"`, `'` 는 element content 이므로 escape 불필요)
 // ─────────────────────────────────────────────────────────
-function escapeXml(s: string): string {
-  return s
+function preprocessText(text: string): string {
+  return text
+    .replace(/\s+/g, ' ')
+    .trim()
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&apos;');
-}
-
-function buildSSMLBody(text: string, lang: Lang): string {
-  // 1. 공백 정리 + XML escape (반드시 먼저)
-  let processed = escapeXml(text.replace(/\s+/g, ' ').trim());
-
-  if (lang === 'ko') {
-    // (a) 한국어 종결어미 (~다./요./네./까?/죠. 등) → 가장 긴 호흡 (문장 단락)
-    processed = processed.replace(
-      /([다요네까죠라리야임니])([.!?])/g,
-      '$1$2<break time="600ms"/>'
-    );
-    // (b) 일반 마침표/물음표/느낌표 → 중간 호흡
-    processed = processed.replace(/([.!?])(?!<)/g, '$1<break time="380ms"/>');
-    // (c) 콜론·세미콜론 → 중간 호흡 (성경 본문에서 자주 등장)
-    processed = processed.replace(/([:;])/g, '$1<break time="320ms"/>');
-    // (d) 쉼표 → 짧은 호흡
-    processed = processed.replace(/,(?!<)/g, ',<break time="200ms"/>');
-
-    // (e) 한국어 접속 부사 앞 짧은 단락 — 자연스러운 운율 형성
-    //     예: "그러나 ~", "그러므로 ~", "이는 ~"
-    processed = processed.replace(
-      /(^|\s)(그러나|그러므로|그러면|그런즉|그래서|그리고|또한|이는|보라|이에|이로써|그러나|그렇지만|그런데|그러나|그렇기에|그래도|만일|만약|그렇다면)([\s,])/g,
-      '$1<break time="220ms"/>$2$3'
-    );
-
-    // (f) 직접화법 도입어 ("이르시되", "말씀하시되", "가라사대" 등) 뒤에 짧은 호흡
-    processed = processed.replace(
-      /(이르시되|말씀하시되|말씀하시기를|말하기를|가라사대|이르되|대답하여|대답하되|이르시기를)(\s)/g,
-      '$1<break time="380ms"/>$2'
-    );
-
-    // (g) 인용/직접화법 따옴표 처리 — 짧은 호흡
-    //     ⚠️ 이 시점에서 break 태그가 이미 삽입되어 있으므로, 태그 속성의 raw `"` 와 충돌하지 않도록
-    //     XML escape 된 entity 만 매칭한다 (원본 텍스트의 따옴표는 escapeXml 단계에서 entity로 변환됨).
-    processed = processed.replace(/(&quot;|&apos;)/g, '<break time="150ms"/>$1');
-  } else {
-    // 영어: 문장 끝 호흡
-    processed = processed.replace(/([.!?])(?!<)/g, '$1<break time="420ms"/>');
-    processed = processed.replace(/([:;])/g, '$1<break time="300ms"/>');
-    processed = processed.replace(/,(?!<)/g, ',<break time="170ms"/>');
-    // 영어 접속사 앞 짧은 호흡
-    processed = processed.replace(
-      /(^|\s)(But|However|Therefore|Moreover|Furthermore|Yet|For|Behold|And so)\s/g,
-      '$1<break time="200ms"/>$2 '
-    );
-  }
-
-  return processed;
+    .replace(/>/g, '&gt;');
 }
 
 // ─────────────────────────────────────────────────────────
-// Edge TTS — msedge-tts 라이브러리 사용
-// toStream 의 input 인자에는 인라인 SSML 요소(<break>, <emphasis>)를 넣을 수 있음
+// Edge TTS — msedge-tts 라이브러리
 // ─────────────────────────────────────────────────────────
 async function synthesizeWithEdge(text: string, voiceName: string, lang: Lang): Promise<Buffer> {
   const tts = new MsEdgeTTS();
   await tts.setMetadata(voiceName, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
 
-  const ssmlBody = buildSSMLBody(text, lang);
+  const processed = preprocessText(text);
 
-  const { audioStream } = tts.toStream(ssmlBody, {
-    rate: lang === 'ko' ? '-10%' : '-4%',  // 한국어는 더 느리고 차분한 묵상 톤
-    pitch: lang === 'ko' ? '-3%' : '-2%',  // 살짝 낮은 음높이로 따뜻함 강조
+  // ⚠️ rate/pitch 만 사용. 둘 다 라이브러리가 SSML 래퍼의 <prosody> 속성으로 적용한다.
+  // 한국어는 -10% 로 차분한 묵상 톤. 영어는 -5% 로 살짝 느리게.
+  // pitch 는 default('+0Hz')가 가장 자연스러움 — 음성마다 다른 기본 음높이를 그대로 살림.
+  const { audioStream } = tts.toStream(processed, {
+    rate: lang === 'ko' ? '-10%' : '-5%',
+    pitch: '+0Hz',
   });
 
   const chunks: Buffer[] = [];
@@ -154,11 +116,14 @@ async function synthesizeWithEdge(text: string, voiceName: string, lang: Lang): 
     setTimeout(() => reject(new Error('Edge TTS timeout')), 30000);
   });
 
+  try { tts.close(); } catch {}
   return Buffer.concat(chunks);
 }
 
 // ─────────────────────────────────────────────────────────
-// Google Cloud TTS — REST API + API key (SDK 의존성 없음)
+// Google Cloud TTS — REST API + API key (선택, 키 있을 때만)
+// Google 은 SSML 을 완벽 지원하므로 break tag 도 사용 가능하지만,
+// 일관성을 위해 평문 + speakingRate 만 사용.
 // ─────────────────────────────────────────────────────────
 function googleApiKey(): string | null {
   return process.env.GOOGLE_TTS_API_KEY || null;
@@ -168,8 +133,7 @@ async function synthesizeWithGoogle(text: string, voiceName: string, lang: Lang)
   const apiKey = googleApiKey();
   if (!apiKey) throw new Error('Google TTS not configured');
 
-  const ssmlBody = buildSSMLBody(text, lang);
-  const ssml = `<speak><prosody rate="${lang === 'ko' ? '0.92' : '0.96'}" pitch="-1st">${ssmlBody}</prosody></speak>`;
+  const cleaned = text.replace(/\s+/g, ' ').trim();
   const languageCode = lang === 'en' ? 'en-US' : 'ko-KR';
 
   const res = await fetch(
@@ -178,10 +142,12 @@ async function synthesizeWithGoogle(text: string, voiceName: string, lang: Lang)
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        input: { ssml },
+        input: { text: cleaned },
         voice: { languageCode, name: voiceName },
         audioConfig: {
           audioEncoding: 'MP3',
+          speakingRate: lang === 'ko' ? 0.92 : 0.96,
+          pitch: 0,
           effectsProfileId: ['headphone-class-device'],
         },
       }),
@@ -230,7 +196,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const text: string = body.text || '';
-    const voice: VoiceId = body.voice || 'female';
+    const voice: string = body.voice || 'female';
     const lang: Lang = body.lang === 'en' ? 'en' : 'ko';
     const requestedEngine: Engine = body.engine || 'auto';
 
@@ -238,8 +204,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '텍스트가 없습니다.' }, { status: 400 });
     }
 
-    // 평문 기준 안전 한도 (SSML 호흡 태그가 추가되면 약 1.5~2배로 늘어남)
-    const truncated = text.slice(0, 3000);
+    // 라이브 테스트 결과 4500자까지 안전하게 처리됨. 4000자로 안전 마진 확보.
+    const truncated = text.slice(0, 4000);
     const engine = resolveEngine(requestedEngine);
     const voiceName = pickVoice(engine, lang, voice);
 
@@ -262,7 +228,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (audioBuffer.length === 0) {
-      return NextResponse.json({ error: '음성 생성 실패' }, { status: 502 });
+      return NextResponse.json({ error: '음성 생성 실패 (빈 응답)' }, { status: 502 });
     }
 
     return new NextResponse(new Uint8Array(audioBuffer), {
