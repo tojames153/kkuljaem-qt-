@@ -8,27 +8,28 @@ interface Props {
   lang?: 'ko' | 'en';
 }
 
-type VoiceKey = 'sunhi' | 'jimin' | 'injoon' | 'bongjin' | 'jenny' | 'aria' | 'guy' | 'davis';
+type VoiceKey = 'sunhi' | 'injoon' | 'hyunsu' | 'jenny' | 'aria' | 'guy' | 'andrew';
 type Engine = 'edge' | 'google' | 'auto';
 
 interface VoiceOption {
   key: VoiceKey;
   label: string;
   gender: 'female' | 'male';
+  badge?: string;  // "신형" 같은 표식
 }
 
+// ⚠️ Edge TTS 무료 엔드포인트가 실제로 지원하는 음성만 등록
 const VOICE_OPTIONS: Record<'ko' | 'en', VoiceOption[]> = {
   ko: [
     { key: 'sunhi',   label: '선희',  gender: 'female' },
-    { key: 'jimin',   label: '지민',  gender: 'female' },
     { key: 'injoon',  label: '인준',  gender: 'male' },
-    { key: 'bongjin', label: '봉진',  gender: 'male' },
+    { key: 'hyunsu',  label: '현수',  gender: 'male', badge: '신형' },
   ],
   en: [
-    { key: 'jenny', label: 'Jenny', gender: 'female' },
-    { key: 'aria',  label: 'Aria',  gender: 'female' },
-    { key: 'guy',   label: 'Guy',   gender: 'male' },
-    { key: 'davis', label: 'Davis', gender: 'male' },
+    { key: 'jenny',  label: 'Jenny',  gender: 'female' },
+    { key: 'aria',   label: 'Aria',   gender: 'female' },
+    { key: 'guy',    label: 'Guy',    gender: 'male' },
+    { key: 'andrew', label: 'Andrew', gender: 'male', badge: 'New' },
   ],
 };
 
@@ -37,18 +38,23 @@ const DEFAULT_VOICE: Record<'ko' | 'en', VoiceKey> = {
   en: 'jenny',
 };
 
-// 구버전 localStorage 값 ('female'/'male') → 신버전 보이스 키 마이그레이션
+// 구버전/잘못된 localStorage 값을 신버전 보이스 키로 마이그레이션
 function migrateVoiceValue(stored: string | null, currentLang: 'ko' | 'en'): VoiceKey {
   if (!stored) return DEFAULT_VOICE[currentLang];
   if (stored === 'female') return currentLang === 'ko' ? 'sunhi' : 'jenny';
   if (stored === 'male') return currentLang === 'ko' ? 'injoon' : 'guy';
-  // 이미 신규 키면 그대로
-  const allKeys: VoiceKey[] = ['sunhi', 'jimin', 'injoon', 'bongjin', 'jenny', 'aria', 'guy', 'davis'];
-  if (allKeys.includes(stored as VoiceKey)) return stored as VoiceKey;
+  // 폐기된 키 (이전 시도에서 등록되었던 것)
+  if (stored === 'jimin' || stored === 'bongjin') return 'sunhi';
+  if (stored === 'davis') return 'guy';
+  // 현재 lang에서 유효한 키이면 그대로
+  const validKeys = VOICE_OPTIONS[currentLang].map((v) => v.key);
+  if (validKeys.includes(stored as VoiceKey)) return stored as VoiceKey;
   return DEFAULT_VOICE[currentLang];
 }
 
-const MAX_TTS_LENGTH = 4500;
+// SSML 호흡 태그가 추가되면 본문이 약 1.5~2배로 늘어나므로
+// 평문 기준 청크 길이를 보수적으로 잡아 Edge TTS의 입력 한도 내에 머무르게 함.
+const MAX_TTS_LENGTH = 2800;
 
 // 무음 mp3 (모바일 오디오 잠금 해제용, 아주 짧은 무음)
 const SILENCE_DATA_URI = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRwMHAAAAAAD/+1DEAAIF8ANKUAAAIAAANILAAAAEX/Bf/EDBQ+D5/KAgCAIHygIAmD/ygfB8HwfAgCAYPg+D4Pg+BAMHwfB8HwfB8CAYPg+D4Pg+D4EAwfB8HwfB8HwIBg+D4Pg+D4PgQDB8HwfB8HwfAgGD4Pg+D4Pg+BAMH/5cEAQBAEAQBAEAQBAEAf/7UMQOAAAAANIAAAAAAAANIAAAABCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCEIQhCE';
@@ -382,10 +388,15 @@ export default function BibleAudioPlayer({ text, label = '성경 듣기', lang =
                     ? 'bg-white text-pink-400 border border-pink-200 hover:bg-pink-50'
                     : 'bg-white text-blue-400 border border-blue-200 hover:bg-blue-50'
               }`}
-              title={`${isFemale ? '여성' : '남성'} — ${opt.label}`}
+              title={`${isFemale ? '여성' : '남성'} — ${opt.label}${opt.badge ? ` (${opt.badge})` : ''}`}
             >
               <span>{isFemale ? '👩' : '👨'}</span>
               <span>{opt.label}</span>
+              {opt.badge && (
+                <span className={`text-[8px] px-1 rounded ${active ? 'bg-white/30' : 'bg-amber-100 text-amber-600'}`}>
+                  {opt.badge}
+                </span>
+              )}
             </button>
           );
         })}

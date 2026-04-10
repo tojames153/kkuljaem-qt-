@@ -11,27 +11,28 @@ type VoiceId = 'female' | 'male';
 // ─────────────────────────────────────────────────────────
 // 음성 매핑: 엔진 × 언어 × 음성ID → 실제 음성 이름
 // 음성ID는 프론트엔드와 공유되는 논리 키
+//
+// ⚠️ Edge TTS 무료 엔드포인트(speech.platform.bing.com)는 Azure 전체 음성 중
+// 일부만 노출함. 한국어는 단 3개 (SunHi, InJoon, HyunsuMultilingual).
+// 영어는 17개. 여기에 등록된 voice ID는 모두 실제 사용 가능한 것으로 검증됨.
 // ─────────────────────────────────────────────────────────
 const VOICE_MAP: Record<'edge' | 'google', Record<Lang, Record<string, string>>> = {
   edge: {
     ko: {
-      // 한국어 4종 (성별 × 2)
-      sunhi: 'ko-KR-SunHiNeural',     // 여성 — 선희, 따뜻하고 표준적
-      jimin: 'ko-KR-JiMinNeural',     // 여성 — 지민, 밝고 또렷함
-      injoon: 'ko-KR-InJoonNeural',   // 남성 — 인준, 차분하고 표준적
-      bongjin: 'ko-KR-BongJinNeural', // 남성 — 봉진, 따뜻하고 묵직함
-      // 호환 (구버전 voice='female'/'male'/'nova'/'onyx')
+      sunhi: 'ko-KR-SunHiNeural',                  // 여성 — 표준
+      injoon: 'ko-KR-InJoonNeural',                // 남성 — 표준
+      hyunsu: 'ko-KR-HyunsuMultilingualNeural',    // 남성 — 멀티링구얼 신형, 가장 자연스러움
+      // 호환 (구버전 voice='female'/'male')
       female: 'ko-KR-SunHiNeural',
       male: 'ko-KR-InJoonNeural',
       nova: 'ko-KR-SunHiNeural',
       onyx: 'ko-KR-InJoonNeural',
     },
     en: {
-      // 영어 4종
-      jenny: 'en-US-JennyNeural',     // 여성 — Jenny, 자연스럽고 친근
-      aria: 'en-US-AriaNeural',       // 여성 — Aria, 명료하고 차분
-      guy: 'en-US-GuyNeural',         // 남성 — Guy, 차분하고 명료
-      davis: 'en-US-DavisNeural',     // 남성 — Davis, 깊고 따뜻함
+      jenny: 'en-US-JennyNeural',                  // 여성 — 친근
+      aria: 'en-US-AriaNeural',                    // 여성 — 명료
+      guy: 'en-US-GuyNeural',                      // 남성 — 차분
+      andrew: 'en-US-AndrewMultilingualNeural',    // 남성 — 멀티링구얼 신형, 부드러움
       // 호환
       female: 'en-US-JennyNeural',
       male: 'en-US-GuyNeural',
@@ -42,9 +43,8 @@ const VOICE_MAP: Record<'edge' | 'google', Record<Lang, Record<string, string>>>
   google: {
     ko: {
       sunhi: 'ko-KR-Neural2-B',
-      jimin: 'ko-KR-Neural2-A',
       injoon: 'ko-KR-Neural2-C',
-      bongjin: 'ko-KR-Standard-D',
+      hyunsu: 'ko-KR-Neural2-A',
       female: 'ko-KR-Neural2-B',
       male: 'ko-KR-Neural2-C',
       nova: 'ko-KR-Neural2-A',
@@ -54,7 +54,7 @@ const VOICE_MAP: Record<'edge' | 'google', Record<Lang, Record<string, string>>>
       jenny: 'en-US-Neural2-F',
       aria: 'en-US-Neural2-G',
       guy: 'en-US-Neural2-D',
-      davis: 'en-US-Neural2-J',
+      andrew: 'en-US-Neural2-J',
       female: 'en-US-Neural2-F',
       male: 'en-US-Neural2-D',
       nova: 'en-US-Neural2-G',
@@ -112,8 +112,10 @@ function buildSSMLBody(text: string, lang: Lang): string {
       '$1<break time="380ms"/>$2'
     );
 
-    // (g) 인용/직접화법 따옴표 처리 — 따옴표 앞뒤로 짧은 호흡
-    processed = processed.replace(/(&quot;|&apos;|"|')/g, '<break time="150ms"/>$1');
+    // (g) 인용/직접화법 따옴표 처리 — 짧은 호흡
+    //     ⚠️ 이 시점에서 break 태그가 이미 삽입되어 있으므로, 태그 속성의 raw `"` 와 충돌하지 않도록
+    //     XML escape 된 entity 만 매칭한다 (원본 텍스트의 따옴표는 escapeXml 단계에서 entity로 변환됨).
+    processed = processed.replace(/(&quot;|&apos;)/g, '<break time="150ms"/>$1');
   } else {
     // 영어: 문장 끝 호흡
     processed = processed.replace(/([.!?])(?!<)/g, '$1<break time="420ms"/>');
@@ -236,7 +238,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '텍스트가 없습니다.' }, { status: 400 });
     }
 
-    const truncated = text.slice(0, 5000);
+    // 평문 기준 안전 한도 (SSML 호흡 태그가 추가되면 약 1.5~2배로 늘어남)
+    const truncated = text.slice(0, 3000);
     const engine = resolveEngine(requestedEngine);
     const voiceName = pickVoice(engine, lang, voice);
 
