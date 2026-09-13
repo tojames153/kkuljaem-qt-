@@ -2,6 +2,7 @@ import { devotionalsPart1a } from './devotionals-part1a';
 import { devotionalsPart1b } from './devotionals-part1b';
 import { devotionalsPart2 } from './devotionals-part2';
 import { devotionalsPart3 } from './devotionals-part3';
+import { devotionals2027Jan } from './devotionals-2027-jan';
 import { type SeasonId, findSeasonForDate } from '@/lib/church-calendar';
 
 export interface DevotionalData {
@@ -67,8 +68,27 @@ for (const d of allDevotionals) {
   devotionalPool[sid].push(d);
 }
 
+// 2027년 날짜별 묵상 맵 (연간 주제: 하나님과 친밀함)
+// 날짜 키 형식: "YYYY-MM-DD"
+const devotionals2027ByDate: Record<string, DevotionalData> = {};
+
+// 2027년 1월 (days 1-31 → 2027-01-01 ~ 2027-01-31)
+(devotionals2027Jan as DevotionalData[]).forEach((d, i) => {
+  const dayOfMonth = i + 1;
+  devotionals2027ByDate[`2027-01-${String(dayOfMonth).padStart(2, '0')}`] = d;
+});
+
 // 날짜 기반 묵상 선택 (교회력 시즌에 맞춰)
 export function getDevotionalForDate(date: Date): DevotionalData {
+  // 2027년 전용 날짜별 묵상이 있으면 우선 반환
+  const year = date.getFullYear();
+  if (year === 2027) {
+    const key = `${year}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    if (devotionals2027ByDate[key]) {
+      return devotionals2027ByDate[key];
+    }
+  }
+
   const { seasonId, dayInSeason } = findSeasonForDate(date);
   const pool = devotionalPool[seasonId];
 
