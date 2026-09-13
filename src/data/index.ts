@@ -3,6 +3,8 @@ import { devotionalsPart1b } from './devotionals-part1b';
 import { devotionalsPart2 } from './devotionals-part2';
 import { devotionalsPart3 } from './devotionals-part3';
 import { devotionals2027Jan } from './devotionals-2027-jan';
+import { devotionals2027Feb } from './devotionals-2027-feb';
+import { devotionals2027Mar } from './devotionals-2027-mar';
 import { type SeasonId, findSeasonForDate } from '@/lib/church-calendar';
 
 export interface DevotionalData {
@@ -76,6 +78,18 @@ const devotionals2027ByDate: Record<string, DevotionalData> = {};
 (devotionals2027Jan as DevotionalData[]).forEach((d, i) => {
   const dayOfMonth = i + 1;
   devotionals2027ByDate[`2027-01-${String(dayOfMonth).padStart(2, '0')}`] = d;
+});
+
+// 2027년 2월 (days 1-28 → 2027-02-01 ~ 2027-02-28)
+(devotionals2027Feb as DevotionalData[]).forEach((d, i) => {
+  const dayOfMonth = i + 1;
+  devotionals2027ByDate[`2027-02-${String(dayOfMonth).padStart(2, '0')}`] = d;
+});
+
+// 2027년 3월 (days 1-31 → 2027-03-01 ~ 2027-03-31)
+(devotionals2027Mar as DevotionalData[]).forEach((d, i) => {
+  const dayOfMonth = i + 1;
+  devotionals2027ByDate[`2027-03-${String(dayOfMonth).padStart(2, '0')}`] = d;
 });
 
 // 날짜 기반 묵상 선택 (교회력 시즌에 맞춰)
