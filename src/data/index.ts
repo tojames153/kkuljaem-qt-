@@ -5,6 +5,15 @@ import { devotionalsPart3 } from './devotionals-part3';
 import { devotionals2027Jan } from './devotionals-2027-jan';
 import { devotionals2027Feb } from './devotionals-2027-feb';
 import { devotionals2027Mar } from './devotionals-2027-mar';
+import { devotionals2027Apr } from './devotionals-2027-apr';
+import { devotionals2027May } from './devotionals-2027-may';
+import { devotionals2027Jun } from './devotionals-2027-jun';
+import { devotionals2027Jul } from './devotionals-2027-jul';
+import { devotionals2027Aug } from './devotionals-2027-aug';
+import { devotionals2027Sep } from './devotionals-2027-sep';
+import { devotionals2027Oct } from './devotionals-2027-oct';
+import { devotionals2027Nov } from './devotionals-2027-nov';
+import { devotionals2027Dec } from './devotionals-2027-dec';
 import { type SeasonId, findSeasonForDate } from '@/lib/church-calendar';
 
 export interface DevotionalData {
@@ -90,6 +99,60 @@ const devotionals2027ByDate: Record<string, DevotionalData> = {};
 (devotionals2027Mar as DevotionalData[]).forEach((d, i) => {
   const dayOfMonth = i + 1;
   devotionals2027ByDate[`2027-03-${String(dayOfMonth).padStart(2, '0')}`] = d;
+});
+
+// 2027년 4월 (days 1-30 → 2027-04-01 ~ 2027-04-30)
+(devotionals2027Apr as DevotionalData[]).forEach((d, i) => {
+  const dayOfMonth = i + 1;
+  devotionals2027ByDate[`2027-04-${String(dayOfMonth).padStart(2, '0')}`] = d;
+});
+
+// 2027년 5월 (days 1-31 → 2027-05-01 ~ 2027-05-31)
+(devotionals2027May as DevotionalData[]).forEach((d, i) => {
+  const dayOfMonth = i + 1;
+  devotionals2027ByDate[`2027-05-${String(dayOfMonth).padStart(2, '0')}`] = d;
+});
+
+// 2027년 6월 (days 1-30 → 2027-06-01 ~ 2027-06-30)
+(devotionals2027Jun as DevotionalData[]).forEach((d, i) => {
+  const dayOfMonth = i + 1;
+  devotionals2027ByDate[`2027-06-${String(dayOfMonth).padStart(2, '0')}`] = d;
+});
+
+// 2027년 7월 (days 1-31 → 2027-07-01 ~ 2027-07-31)
+(devotionals2027Jul as DevotionalData[]).forEach((d, i) => {
+  const dayOfMonth = i + 1;
+  devotionals2027ByDate[`2027-07-${String(dayOfMonth).padStart(2, '0')}`] = d;
+});
+
+// 2027년 8월 (days 1-31 → 2027-08-01 ~ 2027-08-31)
+(devotionals2027Aug as DevotionalData[]).forEach((d, i) => {
+  const dayOfMonth = i + 1;
+  devotionals2027ByDate[`2027-08-${String(dayOfMonth).padStart(2, '0')}`] = d;
+});
+
+// 2027년 9월 (days 1-30 → 2027-09-01 ~ 2027-09-30)
+(devotionals2027Sep as DevotionalData[]).forEach((d, i) => {
+  const dayOfMonth = i + 1;
+  devotionals2027ByDate[`2027-09-${String(dayOfMonth).padStart(2, '0')}`] = d;
+});
+
+// 2027년 10월 (days 1-31 → 2027-10-01 ~ 2027-10-31)
+(devotionals2027Oct as DevotionalData[]).forEach((d, i) => {
+  const dayOfMonth = i + 1;
+  devotionals2027ByDate[`2027-10-${String(dayOfMonth).padStart(2, '0')}`] = d;
+});
+
+// 2027년 11월 (days 1-30 → 2027-11-01 ~ 2027-11-30)
+(devotionals2027Nov as DevotionalData[]).forEach((d, i) => {
+  const dayOfMonth = i + 1;
+  devotionals2027ByDate[`2027-11-${String(dayOfMonth).padStart(2, '0')}`] = d;
+});
+
+// 2027년 12월 (days 1-31 → 2027-12-01 ~ 2027-12-31)
+(devotionals2027Dec as DevotionalData[]).forEach((d, i) => {
+  const dayOfMonth = i + 1;
+  devotionals2027ByDate[`2027-12-${String(dayOfMonth).padStart(2, '0')}`] = d;
 });
 
 // 날짜 기반 묵상 선택 (교회력 시즌에 맞춰)
