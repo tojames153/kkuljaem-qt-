@@ -55,6 +55,24 @@ const seasonCcm: Record<string, CcmSet> = {
     young_adult: '성령의 바람 불어와 (워십)',
     senior: '성령이여 강림하사 (찬송가 176장)',
   },
+  '연중시기 가을': {
+    children: '감사해요 하나님 (어린이CCM)',
+    youth: '감사 감사 감사합니다 - 예수전도단 (CCM)',
+    young_adult: '주의 선하심과 인자하심이 (워십)',
+    senior: '감사하다 우리 주께 (찬송가 587장)',
+  },
+  '늦가을': {
+    children: '예수님 다시 오실 거예요 (어린이찬송)',
+    youth: '마라나타 - 소원 (CCM)',
+    young_adult: '신실한 주님 (워십)',
+    senior: '하나님의 나팔소리 (찬송가 180장)',
+  },
+  '연중시기': {
+    children: '하나님 사랑해요 (어린이CCM)',
+    youth: '주는 나의 힘 나의 방패 - 마커스워십 (CCM)',
+    young_adult: '날 새롭게 하소서 (워십)',
+    senior: '주 안에 있는 나에게 (찬송가 419장)',
+  },
 };
 
 // 주제 키워드 → 연령별 찬양 매핑
@@ -264,6 +282,51 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
       youth: '선한 목자 되신 우리 주 - 어노인팅 (CCM)',
       young_adult: '여호와 로이 (워십)',
       senior: '목자 되신 우리 주 (찬송가 370장)',
+    },
+  },
+  {
+    keywords: ['추수', '열매', '수확'],
+    ccm: {
+      children: '감사해요 하나님 (어린이CCM)',
+      youth: '열매 맺는 삶 - 어노인팅 (CCM)',
+      young_adult: '주의 선하심과 인자하심이 (워십)',
+      senior: '감사하다 우리 주께 (찬송가 587장)',
+    },
+  },
+  {
+    keywords: ['나눔', '베풂', '구제'],
+    ccm: {
+      children: '우리 모두 다 함께 (어린이찬송)',
+      youth: '나의 모습 나의 소유 - 마커스워십 (CCM)',
+      young_adult: '주를 따르리 (워십)',
+      senior: '내 모든 소원 기도의 제목 (찬송가 454장)',
+    },
+  },
+  {
+    keywords: ['화해', '화목', '중보'],
+    ccm: {
+      children: '예수님처럼 (어린이CCM)',
+      youth: '함께 모여 찬양해 - 캠퍼스워십 (CCM)',
+      young_adult: '하나되게 하소서 (워십)',
+      senior: '교회의 참된 터는 (찬송가 230장)',
+    },
+  },
+  {
+    keywords: ['정의', '공의', '공정'],
+    ccm: {
+      children: '바른 길 가게 해주세요 (어린이CCM)',
+      youth: '정의의 강 - 예수전도단 (CCM)',
+      young_adult: '주의 나라가 임하게 하소서 (워십)',
+      senior: '저 높은 곳을 향하여 (찬송가 488장)',
+    },
+  },
+  {
+    keywords: ['긍휼', '자비', '불쌍'],
+    ccm: {
+      children: '하나님의 사랑은 (어린이찬송)',
+      youth: '주님 앞에 나아갑니다 - 소원 (CCM)',
+      young_adult: '주의 인자하심이 내게 넘치도다 (워십)',
+      senior: '하나님은 사랑이라 (찬송가 15장)',
     },
   },
 ];
