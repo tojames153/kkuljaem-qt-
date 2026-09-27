@@ -55,6 +55,18 @@ const seasonCcm: Record<string, CcmSet> = {
     young_adult: '성령의 바람 불어와 (워십)',
     senior: '성령이여 강림하사 (찬송가 176장)',
   },
+  '연중시기': {
+    children: '오늘도 주님과 함께 (어린이찬송)',
+    youth: '주님 뜻대로 - 아이자야 (CCM)',
+    young_adult: '내 삶의 모든 것 주께 드리리 (워십)',
+    senior: '새 힘을 얻으리 (찬송가 428장)',
+  },
+  '연말': {
+    children: '한 해를 주셔서 감사해요 (어린이찬송)',
+    youth: '새해에도 주님과 - 예수전도단 (CCM)',
+    young_adult: '지나온 날들 (워십)',
+    senior: '지금까지 지내온 것 (찬송가 556장)',
+  },
 };
 
 // 주제 키워드 → 연령별 찬양 매핑
@@ -96,7 +108,7 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
     },
   },
   {
-    keywords: ['믿음', '신뢰', '의지'],
+    keywords: ['믿음', '신뢰', '의지', '성장'],
     ccm: {
       children: '내가 믿는 하나님 (어린이CCM)',
       youth: '주를 신뢰합니다 - 아이자야 (CCM)',
@@ -123,7 +135,7 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
     },
   },
   {
-    keywords: ['치유', '회복', '고침', '아픔', '눈물'],
+    keywords: ['치유', '회복', '고침', '아픔', '눈물', '긍휼', '자비'],
     ccm: {
       children: '예수님이 함께하시면 (어린이CCM)',
       youth: '치유자 - 뉴젠워십 (CCM)',
@@ -141,7 +153,7 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
     },
   },
   {
-    keywords: ['순종', '헌신', '따름', '섬김'],
+    keywords: ['순종', '헌신', '따름', '섬김', '나눔', '충성'],
     ccm: {
       children: '예수님처럼 (어린이CCM)',
       youth: '나의 모습 나의 소유 - 마커스워십 (CCM)',
@@ -150,7 +162,7 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
     },
   },
   {
-    keywords: ['용서', '회개', '돌이킴', '죄'],
+    keywords: ['용서', '회개', '돌이킴', '죄', '화해', '화목'],
     ccm: {
       children: '아버지 사랑해요 (어린이CCM)',
       youth: '주님 앞에 나아갑니다 - 소원 (CCM)',
@@ -159,7 +171,7 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
     },
   },
   {
-    keywords: ['공동체', '하나', '교회', '형제', '이웃'],
+    keywords: ['공동체', '하나', '교회', '형제', '이웃', '정의', '공의'],
     ccm: {
       children: '우리 모두 다 함께 (어린이찬송)',
       youth: '함께 모여 찬양해 - 캠퍼스워십 (CCM)',
@@ -186,7 +198,7 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
     },
   },
   {
-    keywords: ['전도', '선교', '복음', '세상'],
+    keywords: ['전도', '선교', '복음', '세상', '하나님나라', '천국'],
     ccm: {
       children: '예수 사랑 전해요 (어린이CCM)',
       youth: '세상을 품은 주의 사랑 - 예수전도단 (CCM)',
@@ -222,7 +234,7 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
     },
   },
   {
-    keywords: ['감사', '축복', '복'],
+    keywords: ['감사', '축복', '복', '추수', '열매'],
     ccm: {
       children: '감사해요 하나님 (어린이CCM)',
       youth: '감사 감사 감사합니다 - 예수전도단 (CCM)',
@@ -264,6 +276,15 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
       youth: '선한 목자 되신 우리 주 - 어노인팅 (CCM)',
       young_adult: '여호와 로이 (워십)',
       senior: '목자 되신 우리 주 (찬송가 370장)',
+    },
+  },
+  {
+    keywords: ['재림', '종말', '심판', '깨어있음', '깨어', '영원'],
+    ccm: {
+      children: '예수님 다시 오실 거예요 (어린이찬송)',
+      youth: '마라나타 - 예수전도단 (CCM)',
+      young_adult: '주 예수님 어서 오시옵소서 (워십)',
+      senior: '주님 다시 오실 때까지 (찬송가 174장)',
     },
   },
 ];
