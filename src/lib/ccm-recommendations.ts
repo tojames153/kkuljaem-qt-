@@ -55,12 +55,36 @@ const seasonCcm: Record<string, CcmSet> = {
     young_adult: '성령의 바람 불어와 (워십)',
     senior: '성령이여 강림하사 (찬송가 176장)',
   },
+  '연중시기 늦가을': {
+    children: '예수님을 기다려요 (어린이찬송)',
+    youth: '다시 오실 주 - 마커스워십 (CCM)',
+    young_adult: '내 영혼의 그윽히 깊은 데서 (워십)',
+    senior: '내 주를 가까이 하게 함은 (찬송가 338장)',
+  },
+  '연중시기 가을': {
+    children: '함께 나눠요 (어린이CCM)',
+    youth: '감사 감사 감사합니다 - 예수전도단 (CCM)',
+    young_adult: '주의 선하심과 인자하심이 (워십)',
+    senior: '이 세상의 모든 것 다 (찬송가 45장)',
+  },
+  '연중시기': {
+    children: '주님과 함께 걸어요 (어린이CCM)',
+    youth: '주는 나의 힘이요 - 마커스워십 (CCM)',
+    young_adult: '주 안에 있는 나에게 (워십)',
+    senior: '만복의 근원 하나님 (찬송가 1장)',
+  },
+  '연말': {
+    children: '한 해를 마치며 (어린이찬송)',
+    youth: '주님의 은혜 - 제이어스 (CCM)',
+    young_adult: '신실하신 하나님 (워십)',
+    senior: '나의 갈 길 다 가도록 (찬송가 384장)',
+  },
 };
 
 // 주제 키워드 → 연령별 찬양 매핑
 const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
   {
-    keywords: ['기다림', '소망', '기대', '인내'],
+    keywords: ['기다림', '소망', '기대', '인내', '종말', '재림', '심판', '영원', '깨어있음'],
     ccm: {
       children: '하나님은 너를 지키시는 분 (어린이찬송)',
       youth: '소망을 품고 - 제이어스 (CCM)',
@@ -96,7 +120,7 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
     },
   },
   {
-    keywords: ['믿음', '신뢰', '의지'],
+    keywords: ['믿음', '신뢰', '의지', '신실', '충성'],
     ccm: {
       children: '내가 믿는 하나님 (어린이CCM)',
       youth: '주를 신뢰합니다 - 아이자야 (CCM)',
@@ -159,7 +183,7 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
     },
   },
   {
-    keywords: ['공동체', '하나', '교회', '형제', '이웃'],
+    keywords: ['공동체', '하나', '교회', '형제', '이웃', '긍휼', '나눔', '화해', '정의'],
     ccm: {
       children: '우리 모두 다 함께 (어린이찬송)',
       youth: '함께 모여 찬양해 - 캠퍼스워십 (CCM)',
@@ -186,7 +210,7 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
     },
   },
   {
-    keywords: ['전도', '선교', '복음', '세상'],
+    keywords: ['전도', '선교', '복음', '세상', '하나님나라'],
     ccm: {
       children: '예수 사랑 전해요 (어린이CCM)',
       youth: '세상을 품은 주의 사랑 - 예수전도단 (CCM)',
@@ -222,7 +246,7 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
     },
   },
   {
-    keywords: ['감사', '축복', '복'],
+    keywords: ['감사', '축복', '복', '추수', '결실'],
     ccm: {
       children: '감사해요 하나님 (어린이CCM)',
       youth: '감사 감사 감사합니다 - 예수전도단 (CCM)',
