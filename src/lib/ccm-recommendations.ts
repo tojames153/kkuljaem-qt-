@@ -55,6 +55,18 @@ const seasonCcm: Record<string, CcmSet> = {
     young_adult: '성령의 바람 불어와 (워십)',
     senior: '성령이여 강림하사 (찬송가 176장)',
   },
+  '연중시기 늦가을': {
+    children: '주님 나라 기다려요 (어린이찬송)',
+    youth: '다시 오실 주님 - 예수전도단 (CCM)',
+    young_adult: '주의 날이 임하리니 (워십)',
+    senior: '시온성과 같은 교회 (찬송가 606장)',
+  },
+  '연중시기': {
+    children: '날마다 주님과 함께 (어린이찬송)',
+    youth: '주는 좋은 하나님 - 제이어스 (CCM)',
+    young_adult: '주 안에서 우리는 (워십)',
+    senior: '주 하나님 독생자 예수 (찬송가 8장)',
+  },
 };
 
 // 주제 키워드 → 연령별 찬양 매핑
@@ -159,7 +171,7 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
     },
   },
   {
-    keywords: ['공동체', '하나', '교회', '형제', '이웃'],
+    keywords: ['공동체', '교회', '형제', '이웃', '하나됨'],
     ccm: {
       children: '우리 모두 다 함께 (어린이찬송)',
       youth: '함께 모여 찬양해 - 캠퍼스워십 (CCM)',
@@ -264,6 +276,60 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
       youth: '선한 목자 되신 우리 주 - 어노인팅 (CCM)',
       young_adult: '여호와 로이 (워십)',
       senior: '목자 되신 우리 주 (찬송가 370장)',
+    },
+  },
+  {
+    keywords: ['종말', '심판'],
+    ccm: {
+      children: '주님 나라 기다려요 (어린이찬송)',
+      youth: '다시 오실 주님 - 예수전도단 (CCM)',
+      young_adult: '왕이 오신다 (워십)',
+      senior: '어느 날 갑자기 (찬송가 172장)',
+    },
+  },
+  {
+    keywords: ['재림'],
+    ccm: {
+      children: '마라나타 예수님 오세요 (어린이찬송)',
+      youth: '주 오실 때까지 - 마커스워십 (CCM)',
+      young_adult: '오소서 주 예수여 (워십)',
+      senior: '예수님이 오신다 (찬송가 168장)',
+    },
+  },
+  {
+    keywords: ['하나님나라'],
+    ccm: {
+      children: '하나님 나라 (어린이찬송)',
+      youth: '하나님의 나라 - 제이어스 (CCM)',
+      young_adult: '나라가 임하게 하소서 (워십)',
+      senior: '시온성과 같은 교회 (찬송가 606장)',
+    },
+  },
+  {
+    keywords: ['영원', '영생'],
+    ccm: {
+      children: '천국에서 만나요 (어린이찬송)',
+      youth: '영원한 나라 - 어노인팅 (CCM)',
+      young_adult: '영원토록 주를 찬양 (워십)',
+      senior: '내 본향 찾아가는 길 (찬송가 607장)',
+    },
+  },
+  {
+    keywords: ['충성', '신실'],
+    ccm: {
+      children: '예수님 제자가 되어요 (어린이CCM)',
+      youth: '나의 일생 주님 손에 - 옹기장이 (CCM)',
+      young_adult: '신실하신 하나님 (워십)',
+      senior: '맡기신 일 다 하고서 (찬송가 481장)',
+    },
+  },
+  {
+    keywords: ['깨어있', '준비', '경계'],
+    ccm: {
+      children: '준비하는 어린이 (어린이찬송)',
+      youth: '깨어 기도하라 - 예수전도단 (CCM)',
+      young_adult: '깨어 기도하라 (워십)',
+      senior: '언제나 기도하고 (찬송가 365장)',
     },
   },
 ];
