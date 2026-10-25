@@ -55,6 +55,12 @@ const seasonCcm: Record<string, CcmSet> = {
     young_adult: '성령의 바람 불어와 (워십)',
     senior: '성령이여 강림하사 (찬송가 176장)',
   },
+  '늦가을': {
+    children: '다시 오실 예수님 (어린이찬송)',
+    youth: '주 오시네 - 예수전도단 (CCM)',
+    young_adult: '깨어 기다리라 (워십)',
+    senior: '주 오실 날 기다리며 (찬송가 174장)',
+  },
 };
 
 // 주제 키워드 → 연령별 찬양 매핑
@@ -264,6 +270,33 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
       youth: '선한 목자 되신 우리 주 - 어노인팅 (CCM)',
       young_adult: '여호와 로이 (워십)',
       senior: '목자 되신 우리 주 (찬송가 370장)',
+    },
+  },
+  {
+    keywords: ['종말', '심판', '재림'],
+    ccm: {
+      children: '다시 오실 예수님 (어린이찬송)',
+      youth: '주 오시네 - 예수전도단 (CCM)',
+      young_adult: '깨어 기다리라 (워십)',
+      senior: '주 오실 날 기다리며 (찬송가 174장)',
+    },
+  },
+  {
+    keywords: ['충성', '깨어있음', '깨어'],
+    ccm: {
+      children: '착하고 충성된 종 (어린이찬송)',
+      youth: '충성을 다하여 - 제이어스 (CCM)',
+      young_adult: '깨어 일어나라 (워십)',
+      senior: '내 맡은 본분은 (찬송가 521장)',
+    },
+  },
+  {
+    keywords: ['영원'],
+    ccm: {
+      children: '영원한 하나님의 사랑 (어린이찬송)',
+      youth: '영원한 그 나라 - 아이자야 (CCM)',
+      young_adult: '영원히 주 찬양 (워십)',
+      senior: '저 높은 곳을 향하여 (찬송가 491장)',
     },
   },
 ];
