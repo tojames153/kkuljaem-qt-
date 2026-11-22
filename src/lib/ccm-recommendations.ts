@@ -55,6 +55,18 @@ const seasonCcm: Record<string, CcmSet> = {
     young_adult: '성령의 바람 불어와 (워십)',
     senior: '성령이여 강림하사 (찬송가 176장)',
   },
+  '연중시기': {
+    children: '날마다 주님을 따라가요 (어린이찬송)',
+    youth: '나를 세상에서 불러내어 - 마커스워십 (CCM)',
+    young_adult: '오직 주만이 (워십)',
+    senior: '구주를 생각만 해도 (찬송가 85장)',
+  },
+  '연말': {
+    children: '한 해를 마치며 감사해요 (어린이찬송)',
+    youth: '지금까지 지내온 것 - 소원 (CCM)',
+    young_adult: '여기까지 인도하신 주 (워십)',
+    senior: '지금까지 지내온 것 (찬송가 460장)',
+  },
 };
 
 // 주제 키워드 → 연령별 찬양 매핑
@@ -156,6 +168,51 @@ const themeCcm: { keywords: string[]; ccm: CcmSet }[] = [
       youth: '주님 앞에 나아갑니다 - 소원 (CCM)',
       young_adult: '은혜 아니면 (워십)',
       senior: '주 예수 넓은 품에 (찬송가 279장)',
+    },
+  },
+  {
+    keywords: ['하나님나라', '왕국'],
+    ccm: {
+      children: '하나님나라 (어린이찬송)',
+      youth: '하나님의 나라 - 예수전도단 (CCM)',
+      young_adult: '주의 나라가 임하게 하소서 (워십)',
+      senior: '나 가나안 땅 그리워 (찬송가 579장)',
+    },
+  },
+  {
+    keywords: ['재림', '종말'],
+    ccm: {
+      children: '예수님 다시 오신대요 (어린이찬송)',
+      youth: '마라나타 - 예수전도단 (CCM)',
+      young_adult: '다시 오시리라 (워십)',
+      senior: '오랫동안 기다리던 (찬송가 174장)',
+    },
+  },
+  {
+    keywords: ['심판'],
+    ccm: {
+      children: '공의로우신 하나님 (어린이CCM)',
+      youth: '주 앞에 서는 날 - 아이자야 (CCM)',
+      young_adult: '나 주의 도움 받고자 (워십)',
+      senior: '천국에서 만나요 (찬송가 606장)',
+    },
+  },
+  {
+    keywords: ['영원'],
+    ccm: {
+      children: '영원하신 하나님 (어린이찬송)',
+      youth: '영원히 주님만 - 제이어스 (CCM)',
+      young_adult: '영원한 주의 사랑 (워십)',
+      senior: '나의 영원하신 기업 (찬송가 410장)',
+    },
+  },
+  {
+    keywords: ['충성', '깨어있음'],
+    ccm: {
+      children: '충성스러운 종이 될래요 (어린이CCM)',
+      youth: '준비하라 - 마커스워십 (CCM)',
+      young_adult: '충성된 사람 (워십)',
+      senior: '부름 받아 나선 이 몸 (찬송가 323장)',
     },
   },
   {
